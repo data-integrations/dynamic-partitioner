@@ -60,7 +60,6 @@ import javax.annotation.Nullable;
 public class DynamicPartitionFileSetParquetSink extends
   PartitionedFileSetSink<Void, GenericRecord> {
   public static final String NAME = "DynamicPFSParquet";
-  public static final String PARTITION_COL_PREFIX = "p_";
 
   private static final Logger LOG = LoggerFactory.getLogger(DynamicPartitionFileSetParquetSink.class);
   private static final String SCHEMA_DESC = "The Parquet schema of the record being written to the Sink as a JSON " +
@@ -103,15 +102,7 @@ public class DynamicPartitionFileSetParquetSink extends
     Partitioning.Builder partitionBuilder = Partitioning.builder();
     String[] partitionFields = config.fieldNames.split(",");
     for (int i = 0; i < partitionFields.length; i++) {
-      // We need to make the name of the partitioned column unique to avoid 'Column repeated in partitioning columns'
-      // errors with Hive.
-      String partitionedFieldName = PARTITION_COL_PREFIX + partitionFields[i];
-      if (parsedSchema.getField(partitionedFieldName) == null) {
-        partitionBuilder.addStringField(PARTITION_COL_PREFIX + partitionFields[i]);
-      } else {
-        throw new IllegalArgumentException(String.format("The partition field: '%s' is already defined in the schema.",
-                                                         partitionedFieldName));
-      }
+      partitionBuilder.addStringField(partitionFields[i]);
     }
 
     pipelineConfigurer.createDataset(pfsName, PartitionedFileSet.class.getName(),
@@ -137,7 +128,7 @@ public class DynamicPartitionFileSetParquetSink extends
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
-    recordTransformer = new StructuredToAvroTransformer(config.schema);
+    recordTransformer = new StructuredToAvroTransformer(config.schema, config.fieldNames);
   }
 
   @Override
@@ -188,11 +179,9 @@ public class DynamicPartitionFileSetParquetSink extends
       for (int i = 0; i < fieldNames.length; i++) {
         if (value.get(fieldNames[i]) == null) {
           // This call will result in an exception but there's nothing else I can do. [CDAP-7053]
-          keyBuilder.addStringField(DynamicPartitionFileSetParquetSink.PARTITION_COL_PREFIX + fieldNames[i],
-                                    null);
+          keyBuilder.addStringField(fieldNames[i], null);
         } else {
-          keyBuilder.addStringField(DynamicPartitionFileSetParquetSink.PARTITION_COL_PREFIX + fieldNames[i],
-                                    String.valueOf(value.get(fieldNames[i])));
+          keyBuilder.addStringField(fieldNames[i], String.valueOf(value.get(fieldNames[i])));
         }
       }
       return keyBuilder.build();

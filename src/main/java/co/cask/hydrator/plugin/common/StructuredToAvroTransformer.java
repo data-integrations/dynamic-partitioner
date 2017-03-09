@@ -25,6 +25,9 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,9 +38,11 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
   private final Map<Integer, Schema> schemaCache;
   private final co.cask.cdap.api.data.schema.Schema outputCDAPSchema;
   private final Schema outputAvroSchema;
+  private final List toIgnore;
 
-  public StructuredToAvroTransformer(String outputSchema) {
+  public StructuredToAvroTransformer(String outputSchema, String toIgnore) {
     this.schemaCache = Maps.newHashMap();
+    this.toIgnore = Arrays.asList(toIgnore.split(","));
     try {
       this.outputCDAPSchema =
         (outputSchema != null) ? co.cask.cdap.api.data.schema.Schema.parseJson(outputSchema) : null;
@@ -56,12 +61,15 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
   public GenericRecord transform(StructuredRecord structuredRecord,
                                  co.cask.cdap.api.data.schema.Schema schema) throws IOException {
     co.cask.cdap.api.data.schema.Schema structuredRecordSchema = structuredRecord.getSchema();
-
+    List fieldsToIgnore = (toIgnore == null) ? new ArrayList() : Arrays.asList(toIgnore);
     Schema avroSchema = getAvroSchema(schema);
 
     GenericRecordBuilder recordBuilder = new GenericRecordBuilder(avroSchema);
     for (Schema.Field field : avroSchema.getFields()) {
       String fieldName = field.name();
+      if (fieldsToIgnore.contains(fieldName)) {
+        continue;
+      }
       co.cask.cdap.api.data.schema.Schema.Field schemaField = structuredRecordSchema.getField(fieldName);
       if (schemaField == null) {
         throw new IllegalArgumentException("Input record does not contain the " + fieldName + " field.");
