@@ -39,6 +39,7 @@ import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
 import co.cask.hydrator.common.HiveSchemaConverter;
+import co.cask.hydrator.plugin.common.FileSetUtil;
 import co.cask.hydrator.plugin.common.StructuredToAvroTransformer;
 import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
@@ -47,7 +48,10 @@ import parquet.avro.AvroParquetInputFormat;
 import parquet.avro.AvroParquetOutputFormat;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -105,16 +109,30 @@ public class DynamicPartitionFileSetParquetSink extends
       partitionBuilder.addStringField(partitionFields[i]);
     }
 
+
+    List<Schema.Field> fields = new ArrayList<>();
+    List<String> toRemove = Arrays.asList(config.fieldNames.toLowerCase().split(","));
+    for (Schema.Field field : parsedSchema.getFields()) {
+      if (!toRemove.contains(field.getName().toLowerCase())) {
+        fields.add(field);
+      }
+    }
+    String outputHiveSchema = null;
+    try {
+      outputHiveSchema = HiveSchemaConverter.toHiveSchema(Schema.recordOf("output", fields));
+    } catch (UnsupportedTypeException e) {
+      throw new RuntimeException("Error: Schema is not valid ", e);
+    }
+
+    PartitionedFileSetProperties.Builder properties = PartitionedFileSetProperties.builder();
+    addPartitionedFileSetProperties(properties);
+
     pipelineConfigurer.createDataset(pfsName, PartitionedFileSet.class.getName(),
-                                     PartitionedFileSetProperties.builder()
+                                     properties
                                        .setPartitioning(partitionBuilder.build())
                                        .setBasePath(basePath)
-                                       .setInputFormat(AvroParquetInputFormat.class)
-                                       .setOutputFormat(AvroParquetOutputFormat.class)
-                                       .setEnableExploreOnCreate(true)
-                                       .setExploreFormat("parquet")
-                                       .setExploreSchema(hiveSchema.substring(1, hiveSchema.length() - 1))
-                                       .add(DatasetProperties.SCHEMA, schema)
+                                       .setExploreSchema(outputHiveSchema.substring(1, outputHiveSchema.length() - 1))
+                                       .add(DatasetProperties.SCHEMA, Schema.recordOf("output", fields).toString())
                                        .build());
   }
 
@@ -129,6 +147,12 @@ public class DynamicPartitionFileSetParquetSink extends
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
     recordTransformer = new StructuredToAvroTransformer(config.schema, config.fieldNames);
+  }
+
+  @Override
+  protected void addPartitionedFileSetProperties(PartitionedFileSetProperties.Builder properties) {
+    FileSetUtil.configureParquetFileSet(config.schema, properties);
+    properties.addAll(FileSetUtil.getParquetCompressionConfiguration(config.compressionCodec, config.schema, true));
   }
 
   @Override
@@ -148,8 +172,9 @@ public class DynamicPartitionFileSetParquetSink extends
     @Description(FIELD_DESC)
     private String fieldNames;
 
-    public DynamicPartitionParquetSinkConfig(String name, String schema, String fieldNames, @Nullable String basePath) {
-      super(name, basePath);
+    public DynamicPartitionParquetSinkConfig(String name, String schema, String fieldNames,
+                                             @Nullable String basePath, @Nullable String compressionCodec) {
+      super(name, basePath, compressionCodec);
       this.schema = schema;
       this.fieldNames = fieldNames;
     }

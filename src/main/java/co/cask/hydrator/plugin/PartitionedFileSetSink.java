@@ -18,6 +18,7 @@ package co.cask.hydrator.plugin;
 
 import co.cask.cdap.api.data.batch.Output;
 import co.cask.cdap.api.data.format.StructuredRecord;
+import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
 import co.cask.cdap.etl.api.PipelineConfigurer;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
@@ -60,4 +61,9 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
   protected Map<String, String> getAdditionalPFSArguments() {
     return new HashMap<>();
   }
+
+  /**
+   * Set file set specific properties, such as input/output format and explore properties.
+   */
+  protected abstract void addPartitionedFileSetProperties(PartitionedFileSetProperties.Builder properties);
 }

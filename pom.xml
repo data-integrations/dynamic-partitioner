@@ -33,7 +33,6 @@
     <cdap.version>4.1.0</cdap.version>
     <hydrator.version>1.6.0</hydrator.version>
     <hadoop.version>2.3.0</hadoop.version>
-    <kudu.version>1.2.0-cdh5.10.0</kudu.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
     <app.parents>system:cdap-etl-batch[4.1.0,4.2.0-SNAPSHOT),system:cdap-etl-realtime[4.1.0,4.2.0-SNAPSHOT),system:cdap-data-pipeline[4.1.0,4.2.0-SNAPSHOT),system:cdap-data-streams[4.1.0,4.2.0-SNAPSHOT)</app.parents>

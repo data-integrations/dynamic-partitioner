@@ -36,9 +36,14 @@ public abstract class PartitionedFileSetSinkConfig extends PluginConfig {
   @Nullable
   protected String basePath;
 
-  public PartitionedFileSetSinkConfig(String name, @Nullable String basePath) {
+  @Nullable
+  @Description("Used to specify the compression codec to be used for the final dataset.")
+  protected String compressionCodec;
+
+  public PartitionedFileSetSinkConfig(String name, @Nullable String basePath, @Nullable String compressionCodec) {
     this.name = name;
     this.basePath = basePath;
+    this.compressionCodec = compressionCodec;
   }
 
   public void validate() {

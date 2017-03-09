@@ -25,6 +25,9 @@ If it doesn't exist, it will be created.
 
 **basePath:** Base path for the ``PartitionedFileSet``. Defaults to the name of the dataset.
 
+**compressionCodec:** Optional parameter to determine the compression codec to use on the resulting data. 
+Valid values are None, Snappy, GZip, and LZO.
+
 Example
 -------
 This example will write to a ``PartitionedFileSet`` named ``'users'`` using the original

@@ -20,6 +20,20 @@
           "widget-type": "csv",
           "label": "Field Names",
           "name": "fieldNames"
+        },
+        {
+          "widget-type": "select",
+          "label": "Compression Codec",
+          "name": "compressionCodec",
+          "widget-attributes": {
+            "values": [
+              "None",
+              "Snappy",
+              "GZip",
+              "LZO"
+            ],
+            "default": "None"
+          }
         }
       ]
     }
