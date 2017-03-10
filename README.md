@@ -1,12 +1,7 @@
-[![Build Status](https://travis-ci.org/hydrator/kudu-sink.svg?branch=develop)](https://travis-ci.org/hydrator/kudu-sink) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+Dynamic Partitioner Plugins
+===========================
 
-Kudu Source & Sink
-===================
-
-CDAP Plugin for ingesting from Kudu tables as well as for writing to Kudu table. Plugins can be configured for both batch and real-time pipelines.
-
-* [Kudu Source](docs/KUDU-SOURCE.md)
-* [Kudu Sink](docs/KUDU-SINK.md)
+CDAP Plugins for Sinks that allow you to specify a list of fields, and leverage the values as partitions in the dataset.
 
 Build
 -----
@@ -27,7 +22,7 @@ You can deploy your plugins using the CDAP CLI:
 
 For example, if your artifact is named 'kudu-sink-1.0.0':
 
-    > load artifact target/kudu-sink-1.0.0.jar config-file target/kudu-sink-1.0.0.json
+    > load artifact target/dynamic-partitioner-1.0.0.jar config-file target/dynamic-partitioner-1.0.0.json
     
 ## Mailing Lists
 
