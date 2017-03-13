@@ -70,9 +70,7 @@ public class FileSetUtil {
   public static void configureParquetFileSet(String configuredSchema, FileSetProperties.Builder properties) {
 
     // validate and parse schema as Avro, and attempt to convert it into a Hive schema
-    String lowerCaseSchema = configuredSchema.toLowerCase();
-    Schema avroSchema = parseAvroSchema(lowerCaseSchema, configuredSchema);
-    String hiveSchema = parseHiveSchema(lowerCaseSchema, configuredSchema);
+    Schema avroSchema = parseAvroSchema(configuredSchema, configuredSchema);
 
     properties
       .setInputFormat(AvroParquetInputFormat.class)

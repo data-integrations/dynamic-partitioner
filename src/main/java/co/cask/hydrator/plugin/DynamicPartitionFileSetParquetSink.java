@@ -91,13 +91,12 @@ public class DynamicPartitionFileSetParquetSink extends
     String pfsName = config.name;
     String basePath = config.basePath == null ? pfsName : config.basePath;
 
-    String schema = config.schema.toLowerCase();
     // parse to make sure it's valid
-    new org.apache.avro.Schema.Parser().parse(schema);
+    new org.apache.avro.Schema.Parser().parse(config.schema);
     String hiveSchema;
     Schema parsedSchema;
     try {
-      parsedSchema = Schema.parseJson(schema);
+      parsedSchema = Schema.parseJson(config.schema);
       hiveSchema = HiveSchemaConverter.toHiveSchema(parsedSchema);
     } catch (UnsupportedTypeException | IOException e) {
       throw new RuntimeException("Error: Schema is not valid ", e);
@@ -111,9 +110,9 @@ public class DynamicPartitionFileSetParquetSink extends
 
 
     List<Schema.Field> fields = new ArrayList<>();
-    List<String> toRemove = Arrays.asList(config.fieldNames.toLowerCase().split(","));
+    List<String> toRemove = Arrays.asList(config.fieldNames.split(","));
     for (Schema.Field field : parsedSchema.getFields()) {
-      if (!toRemove.contains(field.getName().toLowerCase())) {
+      if (!toRemove.contains(field.getName())) {
         fields.add(field);
       }
     }
@@ -132,14 +131,14 @@ public class DynamicPartitionFileSetParquetSink extends
                                        .setPartitioning(partitionBuilder.build())
                                        .setBasePath(basePath)
                                        .setExploreSchema(outputHiveSchema.substring(1, outputHiveSchema.length() - 1))
-                                       .add(DatasetProperties.SCHEMA, Schema.recordOf("output", fields).toString())
+                                       .add(DatasetProperties.SCHEMA, config.schema)
                                        .build());
   }
 
   @Override
   protected Map<String, String> getAdditionalPFSArguments() {
     Map<String, String> args = new HashMap<>();
-    args.put(FileSetProperties.OUTPUT_PROPERTIES_PREFIX + "parquet.avro.schema", config.schema.toLowerCase());
+    args.put(FileSetProperties.OUTPUT_PROPERTIES_PREFIX + "parquet.avro.schema", config.schema);
     return args;
   }
 
