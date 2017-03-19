@@ -1,6 +1,8 @@
 Dynamic Partitioner Plugins
 ===========================
 
+<a href="https://cdap-users.herokuapp.com/"><img alt="Join CDAP community" src="https://cdap-users.herokuapp.com/badge.svg?t=1"/></a> [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 CDAP Plugins for Sinks that allow you to specify a list of fields, and leverage the values as partitions in the dataset.
 
 Build
