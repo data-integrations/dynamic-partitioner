@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "spec-version": "1.0"
+    "spec-version": "1.3"
   },
   "configuration-groups": [
     {
-      "label": "Dynamic Partitioned Fileset - Parquet",
+      "label": "ORC Dynamic Partitioned Dataset",
       "properties": [
         {
           "widget-type": "dataset-selector",
@@ -14,11 +14,12 @@
         {
           "widget-type": "textbox",
           "label": "Dataset Base Path",
-          "name": "basePath"
+          "name": "basePath",
+          "placeholder": "E.g. /tmp/folder/"
         },
         {
           "widget-type": "csv",
-          "label": "Field Names",
+          "label": "Partition Field Names",
           "name": "fieldNames"
         },
         {
@@ -29,10 +30,36 @@
             "values": [
               "None",
               "Snappy",
-              "GZip",
-              "LZO"
+              "ZLIB"
             ],
             "default": "None"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Compression Chunk Size",
+          "name": "compressionChunkSize"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Bytes per stripe",
+          "name": "stripeSize"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Rows between index entries",
+          "name": "indexStride"
+        },
+        {
+          "widget-type": "select",
+          "label": "Create inline indices",
+          "name": "createIndex",
+          "widget-attributes": {
+            "values": [
+              "True",
+              "False"
+            ],
+            "default": "True"
           }
         }
       ]
@@ -54,5 +81,10 @@
         "schema-default-type": "string"
       }
     }
-  ]
+  ],
+  "jump-config": {
+    "datasets": [{
+      "ref-property-name": "name"
+    }]
+  }
 }

@@ -16,9 +16,13 @@
 
 package co.cask.hydrator.plugin;
 
-import co.cask.cdap.api.data.batch.Output;
 import co.cask.cdap.api.data.format.StructuredRecord;
+import co.cask.cdap.api.data.schema.Schema;
+import co.cask.cdap.api.dataset.DatasetManagementException;
+import co.cask.cdap.api.dataset.DatasetProperties;
+import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
+import co.cask.cdap.api.dataset.lib.Partitioning;
 import co.cask.cdap.etl.api.PipelineConfigurer;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
@@ -44,14 +48,43 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
   }
 
   @Override
-  public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
-    partitionedSinkConfig.validate();
+  public void prepareRun(BatchSinkContext context) throws DatasetManagementException{
+    Schema inputSchema = context.getInputSchema();
+    partitionedSinkConfig.validate(inputSchema);
+
+    // if macros were provided and the dataset doesn't exist, create dataset now
+    if (!context.datasetExists(partitionedSinkConfig.name)) {
+      // validate field, schema and get output hive schema
+      Map.Entry<Schema, String> outputSchemaPair = partitionedSinkConfig.getOutputSchema();
+
+      // validate fields and get partitionBuilder
+      Partitioning partitioning = partitionedSinkConfig.getPartitioning(inputSchema);
+
+      // create properties and dataset
+      DatasetProperties properties = getDatasetProperties(partitioning, outputSchemaPair);
+      context.createDataset(partitionedSinkConfig.name, PartitionedFileSet.class.getName(), properties);
+    }
   }
 
   @Override
-  public void prepareRun(BatchSinkContext context) {
-    Map<String, String> sinkArgs = getAdditionalPFSArguments();
-    context.addOutput(Output.ofDataset(partitionedSinkConfig.name, sinkArgs));
+  public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
+    Schema inputSchema = pipelineConfigurer.getStageConfigurer().getInputSchema();
+    partitionedSinkConfig.validate(inputSchema);
+
+    // configure right away if no macros are enabled
+    if (!partitionedSinkConfig.containsMacro("name") && !partitionedSinkConfig.containsMacro("basePath") &&
+      !partitionedSinkConfig.containsMacro("schema") && !partitionedSinkConfig.containsMacro("fieldNames"))
+    {
+      // validate field, schema and get output hive schema
+      Map.Entry<Schema, String> outputSchemaPair = partitionedSinkConfig.getOutputSchema();
+
+      // validate fields and get partitionBuilder
+      Partitioning partitioning = partitionedSinkConfig.getPartitioning(inputSchema);
+
+      // create properties and dataset
+      DatasetProperties properties = getDatasetProperties(partitioning, outputSchemaPair);
+      pipelineConfigurer.createDataset(partitionedSinkConfig.name, PartitionedFileSet.class.getName(), properties);
+    }
   }
 
   /**
@@ -60,6 +93,10 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
    */
   protected Map<String, String> getAdditionalPFSArguments() {
     return new HashMap<>();
+  }
+
+  protected DatasetProperties getDatasetProperties(Partitioning partitioning, Map.Entry<Schema, String> outputSchemaPair) {
+    return PartitionedFileSetProperties.builder().build();
   }
 
   /**
