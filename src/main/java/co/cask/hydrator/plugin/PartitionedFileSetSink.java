@@ -48,7 +48,7 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
   }
 
   @Override
-  public void prepareRun(BatchSinkContext context) throws DatasetManagementException{
+  public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     Schema inputSchema = context.getInputSchema();
     partitionedSinkConfig.validate(inputSchema);
 
@@ -73,8 +73,7 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
 
     // configure right away if no macros are enabled
     if (!partitionedSinkConfig.containsMacro("name") && !partitionedSinkConfig.containsMacro("basePath") &&
-      !partitionedSinkConfig.containsMacro("schema") && !partitionedSinkConfig.containsMacro("fieldNames"))
-    {
+      !partitionedSinkConfig.containsMacro("schema") && !partitionedSinkConfig.containsMacro("fieldNames")) {
       // validate field, schema and get output hive schema
       Map.Entry<Schema, String> outputSchemaPair = partitionedSinkConfig.getOutputSchema();
 
@@ -95,7 +94,8 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
     return new HashMap<>();
   }
 
-  protected DatasetProperties getDatasetProperties(Partitioning partitioning, Map.Entry<Schema, String> outputSchemaPair) {
+  protected DatasetProperties getDatasetProperties(Partitioning partitioning,
+                                                   Map.Entry<Schema, String> outputSchemaPair) {
     return PartitionedFileSetProperties.builder().build();
   }
 

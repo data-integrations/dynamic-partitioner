@@ -18,11 +18,8 @@ package co.cask.hydrator.plugin;
 
 import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.etl.mock.common.MockPipelineConfigurer;
-import org.junit.Test;
 import org.junit.Assert;
-
-import javax.annotation.Nullable;
-
+import org.junit.Test;
 
 public class DynamicPartitionFileSetSinkTest {
 
@@ -179,27 +176,31 @@ public class DynamicPartitionFileSetSinkTest {
   private void configureAvroSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
                                              String fieldnames, String basePath, String compressionCodec) {
     // test avro sink
-    AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig AvroDynamicPartitionedDatasetSinkConfig =
-      new AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(), fieldnames,
-                                                                         basePath, compressionCodec);
-    AvroDynamicPartitionedDatasetSink AvroDynamicPartitionedDatasetSink =
-      new AvroDynamicPartitionedDatasetSink(AvroDynamicPartitionedDatasetSinkConfig);
+    AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig avroDynamicPartitionedDatasetSinkConfig =
+      new AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(),
+                                                                                    fieldnames, basePath,
+                                                                                    compressionCodec);
+    AvroDynamicPartitionedDatasetSink avroDynamicPartitionedDatasetSink =
+      new AvroDynamicPartitionedDatasetSink(avroDynamicPartitionedDatasetSinkConfig);
 
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(inputschema);
-    AvroDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
+    avroDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
   }
 
   private void configureParquetSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
                                                 String fieldnames, String basePath, String compressionCodec) {
     // test parquet sink
-    ParquetDynamicPartitionedDatasetSink.ParquetDynamicPartitionedDatasetSinkConfig ParquetDynamicPartitionedDatasetSinkConfig =
-      new ParquetDynamicPartitionedDatasetSink.ParquetDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(),
-                                                                               fieldnames, basePath, compressionCodec);
-    ParquetDynamicPartitionedDatasetSink ParquetDynamicPartitionedDatasetSink =
-      new ParquetDynamicPartitionedDatasetSink(ParquetDynamicPartitionedDatasetSinkConfig);
+    ParquetDynamicPartitionedDatasetSink
+      .ParquetDynamicPartitionedDatasetSinkConfig parquetDynamicPartitionedDatasetSinkConfig =
+      new ParquetDynamicPartitionedDatasetSink.ParquetDynamicPartitionedDatasetSinkConfig(sinkName,
+                                                                                          outputschema.toString(),
+                                                                                          fieldnames,
+                                                                                          basePath, compressionCodec);
+    ParquetDynamicPartitionedDatasetSink parquetDynamicPartitionedDatasetSink =
+      new ParquetDynamicPartitionedDatasetSink(parquetDynamicPartitionedDatasetSinkConfig);
 
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(inputschema);
-    ParquetDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
+    parquetDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
   }
 
   private void configureORCSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
@@ -208,15 +209,15 @@ public class DynamicPartitionFileSetSinkTest {
                                            Long indexStride,
                                            String createIndex) {
     // test parquet sink
-    ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig ORCDynamicPartitionedDatasetSinkConfig =
+    ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig orcDynamicPartitionedDatasetSinkConfig =
       new ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(),
                                                                        fieldnames, basePath, compressionCodec,
                                                                        compressionChunkSize, stripeSize, indexStride,
                                                                        createIndex);
-    ORCDynamicPartitionedDatasetSink ORCDynamicPartitionedDatasetSink =
-      new ORCDynamicPartitionedDatasetSink(ORCDynamicPartitionedDatasetSinkConfig);
+    ORCDynamicPartitionedDatasetSink orcDynamicPartitionedDatasetSink =
+      new ORCDynamicPartitionedDatasetSink(orcDynamicPartitionedDatasetSinkConfig);
 
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(inputschema);
-    ORCDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
+    orcDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
   }
 }
