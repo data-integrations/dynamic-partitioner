@@ -37,6 +37,7 @@ import co.cask.cdap.etl.api.Emitter;
 import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
+import co.cask.cdap.etl.common.BasicArguments;
 import co.cask.cdap.etl.common.DefaultMacroEvaluator;
 import co.cask.hydrator.plugin.common.FileSetUtil;
 import co.cask.hydrator.plugin.common.MacroParser;
@@ -133,7 +134,8 @@ public class ParquetDynamicPartitionedDatasetSink extends
         .getProperties().get(ParquetDynamicPartitionedDatasetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
 
       // Need to use macro parser here. [CDAP-11960]
-      MacroEvaluator macroEvaluator = new DefaultMacroEvaluator(mapReduceTaskContext.getRuntimeArguments(),
+      BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());
+      MacroEvaluator macroEvaluator = new DefaultMacroEvaluator(basicArguments,
                                                                 mapReduceTaskContext.getLogicalStartTime(),
                                                                 mapReduceTaskContext,
                                                                 mapReduceTaskContext.getNamespace());
