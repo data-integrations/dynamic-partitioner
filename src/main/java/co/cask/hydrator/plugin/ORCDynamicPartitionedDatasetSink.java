@@ -81,9 +81,10 @@ public class ORCDynamicPartitionedDatasetSink extends
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
     Map<String, String> sinkArgs = getAdditionalPFSArguments();
-    DynamicPartitioner.PartitionWriteOption writeOption = config.partitionWriteOption == null ?
+    DynamicPartitioner.PartitionWriteOption writeOption =
+      config.appendToPartition == null || "No".equals(config.appendToPartition) ?
       DynamicPartitioner.PartitionWriteOption.CREATE :
-      DynamicPartitioner.PartitionWriteOption.valueOf(config.partitionWriteOption);
+      DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
     PartitionedFileSetArguments.setDynamicPartitioner
       (sinkArgs, ORCDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));

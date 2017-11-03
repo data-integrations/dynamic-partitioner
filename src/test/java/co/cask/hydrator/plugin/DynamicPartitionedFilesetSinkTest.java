@@ -77,9 +77,10 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
 
   @Test
   public void testPartitionByPurchaseDate() throws Exception {
-//    testPartitionWithEngine(AvroDynamicPartitionedDatasetSink.NAME);
-    testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
-//    testPartitionWithEngine(ParquetDynamicPartitionedDatasetSink.NAME);
+    testDynamicPartition(AvroDynamicPartitionedDatasetSink.NAME);
+    testDynamicPartition(ParquetDynamicPartitionedDatasetSink.NAME);
+    // TODO: [CDAP-12793] need to bring this test back once it's fixed
+//     testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
   }
 
   private void testDynamicPartition(String sinkPluginName) throws Exception {
@@ -88,7 +89,7 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     Map<String, String> properties = ImmutableMap.of("name", sinkName,
                                                      "schema", SCHEMA.toString(),
                                                      "fieldNames", "purchase_date",
-                                                     "partitionWriteOption", "CREATE_OR_APPEND");
+                                                     "appendToPartition", "CREATE_OR_APPEND");
     ETLStage purchaseSink =
       new ETLStage(sinkPluginName, new ETLPlugin(sinkPluginName, BatchSink.PLUGIN_TYPE, properties, null));
     ETLBatchConfig etlConfig = co.cask.cdap.etl.proto.v2.ETLBatchConfig.builder("* * * * *")

@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A {@link BatchSink} to write Avro records to a {@link PartitionedFileSet}.
@@ -76,9 +75,10 @@ public class AvroDynamicPartitionedDatasetSink extends
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
     Map<String, String> sinkArgs = getAdditionalPFSArguments();
-    DynamicPartitioner.PartitionWriteOption writeOption = config.partitionWriteOption == null ?
-      DynamicPartitioner.PartitionWriteOption.CREATE :
-      DynamicPartitioner.PartitionWriteOption.valueOf(config.partitionWriteOption);
+    DynamicPartitioner.PartitionWriteOption writeOption =
+      config.appendToPartition == null || "No".equals(config.appendToPartition) ?
+        DynamicPartitioner.PartitionWriteOption.CREATE :
+        DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
     PartitionedFileSetArguments.setDynamicPartitioner
       (sinkArgs, AvroDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));

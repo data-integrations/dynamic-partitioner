@@ -34,6 +34,18 @@
             ],
             "default": "None"
           }
+        },
+        {
+          "widget-type": "select",
+          "label": "Append to Existing Partition",
+          "name": "appendToPartition",
+          "widget-attributes": {
+            "values": [
+              "Yes",
+              "No"
+            ],
+            "default": "No"
+          }
         }
       ]
     }

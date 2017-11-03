@@ -34,7 +34,7 @@
     <hydrator.version>2.0.0-SNAPSHOT</hydrator.version>
     <hadoop.version>2.3.0</hadoop.version>
     <common-io.version>0.7.1</common-io.version>
-    <parquet-avro.version>1.6.0</parquet-avro.version>
+    <parquet-avro.version>1.8.1</parquet-avro.version>
     <hive-exec.version>1.2.1</hive-exec.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
@@ -235,7 +235,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.twitter</groupId>
+      <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-avro</artifactId>
       <version>${parquet-avro.version}</version>
     </dependency>

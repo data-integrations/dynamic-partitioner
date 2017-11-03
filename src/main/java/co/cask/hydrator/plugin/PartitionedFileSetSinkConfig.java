@@ -61,19 +61,19 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
   protected String fieldNames;
 
   @Nullable
-  @Description("The options for writing to a partition. Defaults to CREATE if left empty, other valid values " +
-    "are CREATE_OR_APPEND and CREATE_OR_OVERWRITE")
-  protected String partitionWriteOption;
+  @Description("Select 'Yes' to append to existing partitions. Defaults to 'No' to always try to create " +
+    "new partitions and exception will be thrown if a partition already exists.")
+  protected String appendToPartition;
 
   public PartitionedFileSetSinkConfig(String name, String schema, String fieldNames,
                                       @Nullable String basePath, @Nullable String compressionCodec,
-                                      @Nullable String partitionWriteOption) {
+                                      @Nullable String appendToPartition) {
     this.name = name;
     this.basePath = basePath;
     this.compressionCodec = compressionCodec;
     this.schema = schema;
     this.fieldNames = fieldNames;
-    this.partitionWriteOption = partitionWriteOption;
+    this.appendToPartition = appendToPartition;
   }
 
   public String getNonNullBasePath() {

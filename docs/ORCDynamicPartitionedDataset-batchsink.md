@@ -25,7 +25,7 @@ Properties
 | **Partition Field Names** | **Y** | None | One or more fields that will be used to partition the dataset. |
 | **Dataset Base Path** | **N** | [Namespace]/data/[Dataset name] | Base path for the ``PartitionedFileSet``. Defaults to the name of the dataset. |
 | **Compression Codec** | **N** | None | Optional parameter to determine the compression codec to use on the resulting data. Valid values are None, Snappy, and zlib. |
-| **Partition Write Option** | **N** | None | Options for writing to a partition. Defaults to CREATE if left empty, and exception will be thrown if trying to write to an existing partition. Use CREATE_OR_APPEND to append to existing partitions or CREATE_OR_OVERWRITE to overwrite existing partitions.|
+| **Append to Existing Partition** | **N** | None | Select 'Yes' to append to existing partitions. Defaults to 'No' to always try to create new partitions and exception will be thrown if a partition already exists.|
 | **Compression Chunk Size** | **N** | None | Required if setting compressionCodec. Number of bytes in each compression chunk. |
 | **Bytes per stripe** | **N** | None | Required if Compression Codec is set. Number of bytes in each stripe. |
 | **Rows between index entries** | **N** | None | Required if Compression Codec is set. Number of rows between index entries (must be >= 1,000). |
