@@ -119,8 +119,8 @@ public class StructuredToOrcTransformer extends RecordConverter<StructuredRecord
           return new BytesWritable(Bytes.getBytes((ByteBuffer) fieldVal));
         }
       default:
-        throw new UnsupportedTypeException(String.format("{} type is currently not supported in ORC",
-                                                         field.getSchema().getType().name()));
+        throw new UnsupportedTypeException(String.format("Type '%s' of field '%s' is currently not supported in ORC",
+                                                         fieldType.name(), field.getName()));
     }
   }
 

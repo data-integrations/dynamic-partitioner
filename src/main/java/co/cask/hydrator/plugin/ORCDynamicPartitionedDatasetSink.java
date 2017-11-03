@@ -81,8 +81,11 @@ public class ORCDynamicPartitionedDatasetSink extends
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
     Map<String, String> sinkArgs = getAdditionalPFSArguments();
+    DynamicPartitioner.PartitionWriteOption writeOption = config.partitionWriteOption == null ?
+      DynamicPartitioner.PartitionWriteOption.CREATE :
+      DynamicPartitioner.PartitionWriteOption.valueOf(config.partitionWriteOption);
     PartitionedFileSetArguments.setDynamicPartitioner
-      (sinkArgs, ORCDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class);
+      (sinkArgs, ORCDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
   }
 
@@ -161,11 +164,12 @@ public class ORCDynamicPartitionedDatasetSink extends
     private Boolean createIndex;
 
     public ORCDynamicPartitionedDatasetSinkConfig(String name, String schema, String fieldNames,
-                                         @Nullable String basePath, @Nullable String compressionCodec,
-                                         @Nullable Long compressionChunkSize, @Nullable Long stripeSize,
-                                         @Nullable Long indexStride,
-                                         @Nullable String createIndex) {
-      super(name, schema, fieldNames, basePath, compressionCodec);
+                                                  @Nullable String basePath, @Nullable String compressionCodec,
+                                                  @Nullable String partitionWriteOption,
+                                                  @Nullable Long compressionChunkSize, @Nullable Long stripeSize,
+                                                  @Nullable Long indexStride,
+                                                  @Nullable String createIndex) {
+      super(name, schema, fieldNames, basePath, compressionCodec, partitionWriteOption);
       this.compressionCodec = compressionCodec;
       this.compressionChunkSize = compressionChunkSize;
       this.stripeSize = stripeSize;

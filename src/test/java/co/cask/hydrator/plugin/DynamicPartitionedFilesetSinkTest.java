@@ -41,19 +41,19 @@ import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.WorkflowManager;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Unit test for {@link AvroDynamicPartitionedDatasetSinkTest}.
+ * Unit test for running dynamic partitioned fileset sink plugins.
  */
-public class AvroDynamicPartitionedDatasetSinkTest extends HydratorTestBase {
+public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
   private static final ArtifactId APP_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("app", "1.0.0");
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("app", "1.0.0");
   private static final Schema SCHEMA = Schema.recordOf(
@@ -71,26 +71,36 @@ public class AvroDynamicPartitionedDatasetSinkTest extends HydratorTestBase {
     setupBatchArtifacts(APP_ARTIFACT_ID, DataPipelineApp.class);
     // add some test plugins
     addPluginArtifact(NamespaceId.DEFAULT.artifact("dynamic-partitioned-dataset-sink-plugins", "1.0.0"),
-                      APP_ARTIFACT_ID, AvroDynamicPartitionedDatasetSink.class);
+                      APP_ARTIFACT_ID, AvroDynamicPartitionedDatasetSink.class, ORCDynamicPartitionedDatasetSink.class,
+                      ParquetDynamicPartitionedDatasetSink.class);
   }
 
   @Test
   public void testPartitionByPurchaseDate() throws Exception {
-    String sourceName = "purchaseSource";
-    String sinkName = "partitionByPurchaseDateSink";
-    Map<String, String> properties = new HashMap<>();
-    properties.put("name", sinkName);
-    properties.put("schema", SCHEMA.toString());
-    properties.put("fieldNames", "purchase_date");
+//    testPartitionWithEngine(AvroDynamicPartitionedDatasetSink.NAME);
+    testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
+//    testPartitionWithEngine(ParquetDynamicPartitionedDatasetSink.NAME);
+  }
+
+  private void testDynamicPartition(String sinkPluginName) throws Exception {
+    String sourceName = "source-" + sinkPluginName;
+    String sinkName = "sink-" + sinkPluginName;
+    Map<String, String> properties = ImmutableMap.of("name", sinkName,
+                                                     "schema", SCHEMA.toString(),
+                                                     "fieldNames", "purchase_date",
+                                                     "partitionWriteOption", "CREATE_OR_APPEND");
     ETLStage purchaseSink =
-      new ETLStage(AvroDynamicPartitionedDatasetSink.NAME,
-                   new ETLPlugin(AvroDynamicPartitionedDatasetSink.NAME, BatchSink.PLUGIN_TYPE, properties, null));
+      new ETLStage(sinkPluginName, new ETLPlugin(sinkPluginName, BatchSink.PLUGIN_TYPE, properties, null));
     ETLBatchConfig etlConfig = co.cask.cdap.etl.proto.v2.ETLBatchConfig.builder("* * * * *")
       .addStage(new ETLStage("source", MockSource.getPlugin(sourceName, SCHEMA)))
       .addStage(purchaseSink)
-      .addConnection("source", AvroDynamicPartitionedDatasetSink.NAME)
+      .addConnection("source", sinkPluginName)
       .setEngine(Engine.MAPREDUCE)
       .build();
+
+    AppRequest<ETLBatchConfig> appRequest = new AppRequest<>(APP_ARTIFACT, etlConfig);
+    ApplicationId appId = NamespaceId.DEFAULT.app("Test_" + sinkPluginName);
+    ApplicationManager appManager = deployApplication(appId, appRequest);
 
     StructuredRecord record1 = StructuredRecord.builder(SCHEMA).set("id", 1L)
       .set("first_name", "Douglas").set("purchase_date", "2009-01-02").build();
@@ -104,20 +114,25 @@ public class AvroDynamicPartitionedDatasetSinkTest extends HydratorTestBase {
       .set("first_name", "Frank").set("purchase_date", "2009-01-03").build();
     StructuredRecord record6 = StructuredRecord.builder(SCHEMA).set("id", 6L)
       .set("first_name", "Serena").set("purchase_date", "2009-01-01").build();
-
-    AppRequest<ETLBatchConfig> appRequest = new AppRequest<>(APP_ARTIFACT, etlConfig);
-    ApplicationId appId = NamespaceId.DEFAULT.app("AvroDynamicPartitionTest");
-    ApplicationManager appManager = deployApplication(appId, appRequest);
-
     DataSetManager<Table> sourceTable = getDataset(sourceName);
     MockSource.writeInput(sourceTable, ImmutableList.of(record1, record2, record3, record4, record5, record6));
+
+    DataSetManager<PartitionedFileSet> pfsManager = getDataset(sinkName);
+    PartitionedFileSet partionedRecords = pfsManager.get();
+    partionedRecords.addPartition(new PartitionKey.Builder()
+                                    .addField("purchase_date", "2009-01-01").build(), "2009-01-01");
+
+    pfsManager.flush();
+
 
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
     manager.start();
     manager.waitForRun(ProgramRunStatus.COMPLETED, 3, TimeUnit.MINUTES);
 
-    PartitionedFileSet partionedRecords = (PartitionedFileSet) getDataset(sinkName).get();
+    pfsManager.flush();
     Set<PartitionDetail> partitions = partionedRecords.getPartitions(null);
+    String path = partitions.iterator().next().getLocation().toString();
+    System.out.println(path);
     Assert.assertEquals(3, partitions.size());
     Assert.assertNotNull(partionedRecords.getPartition(new PartitionKey.Builder()
                                                          .addField("purchase_date", "2009-01-01").build()));

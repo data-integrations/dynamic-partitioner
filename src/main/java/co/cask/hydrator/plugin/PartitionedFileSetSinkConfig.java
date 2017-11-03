@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 /**
  * Abstract config for TimePartitionedFileSetSink
  */
-public abstract class PartitionedFileSetSinkConfig extends PluginConfig {
+public class PartitionedFileSetSinkConfig extends PluginConfig {
   public static final String FIELD_NAMES_PROPERTY_KEY = "fieldNames";
 
   @Description("Name of the Partitioned FileSet Dataset to which the records " +
@@ -60,13 +60,20 @@ public abstract class PartitionedFileSetSinkConfig extends PluginConfig {
   @Macro
   protected String fieldNames;
 
+  @Nullable
+  @Description("The options for writing to a partition. Defaults to CREATE if left empty, other valid values " +
+    "are CREATE_OR_APPEND and CREATE_OR_OVERWRITE")
+  protected String partitionWriteOption;
+
   public PartitionedFileSetSinkConfig(String name, String schema, String fieldNames,
-                                      @Nullable String basePath, @Nullable String compressionCodec) {
+                                      @Nullable String basePath, @Nullable String compressionCodec,
+                                      @Nullable String partitionWriteOption) {
     this.name = name;
     this.basePath = basePath;
     this.compressionCodec = compressionCodec;
     this.schema = schema;
     this.fieldNames = fieldNames;
+    this.partitionWriteOption = partitionWriteOption;
   }
 
   public String getNonNullBasePath() {
