@@ -61,8 +61,7 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
   protected String fieldNames;
 
   @Nullable
-  @Description("Select 'Yes' to append to existing partitions. Defaults to 'No' to always try to create " +
-    "new partitions and exception will be thrown if a partition already exists.")
+  @Description("Allow appending to existing partitions, by default this capability is disabled.")
   protected String appendToPartition;
 
   public PartitionedFileSetSinkConfig(String name, String schema, String fieldNames,
