@@ -25,6 +25,7 @@ Properties
 | **Partition Field Names** | **Y** | None | One or more fields that will be used to partition the dataset. |
 | **Dataset Base Path** | **N** | [Namespace]/data/[Dataset name] | Base path for the ``PartitionedFileSet``. Defaults to the name of the dataset. |
 | **Compression Codec** | **N** | None | Optional parameter to determine the compression codec to use on the resulting data. Valid values are None, Snappy, GZip, and LZO. |
+| **Append to Existing Partition** | **N** | No | Allow appending to existing partitions, by default this capability is disabled.|
 
 Example
 -------

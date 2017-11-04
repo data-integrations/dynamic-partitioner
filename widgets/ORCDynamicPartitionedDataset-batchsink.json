@@ -36,6 +36,18 @@
           }
         },
         {
+          "widget-type": "select",
+          "label": "Append to Existing Partition",
+          "name": "appendToPartition",
+          "widget-attributes": {
+            "values": [
+              "Yes",
+              "No"
+            ],
+            "default": "No"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Compression Chunk Size",
           "name": "compressionChunkSize"

@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A {@link BatchSink} to write Avro records to a {@link PartitionedFileSet}.
@@ -65,9 +64,9 @@ public class AvroDynamicPartitionedDatasetSink extends
   private static final Logger LOG = LoggerFactory.getLogger(AvroDynamicPartitionedDatasetSink.class);
 
   private StructuredToAvroTransformer recordTransformer;
-  private final AvroDynamicPartitionedDatasetSinkConfig config;
+  private final PartitionedFileSetSinkConfig config;
 
-  public AvroDynamicPartitionedDatasetSink(AvroDynamicPartitionedDatasetSinkConfig config) {
+  public AvroDynamicPartitionedDatasetSink(PartitionedFileSetSinkConfig config) {
     super(config);
     this.config = config;
   }
@@ -76,8 +75,12 @@ public class AvroDynamicPartitionedDatasetSink extends
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
     Map<String, String> sinkArgs = getAdditionalPFSArguments();
+    DynamicPartitioner.PartitionWriteOption writeOption =
+      config.appendToPartition == null || "No".equals(config.appendToPartition) ?
+        DynamicPartitioner.PartitionWriteOption.CREATE :
+        DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
     PartitionedFileSetArguments.setDynamicPartitioner
-      (sinkArgs, AvroDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class);
+      (sinkArgs, AvroDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
   }
 
@@ -114,16 +117,6 @@ public class AvroDynamicPartitionedDatasetSink extends
   }
 
   /**
-   * Config for AvroDynamicPartitionedDatasetSink
-   */
-  public static class AvroDynamicPartitionedDatasetSinkConfig extends PartitionedFileSetSinkConfig {
-    public AvroDynamicPartitionedDatasetSinkConfig(String name, String schema, String fieldNames,
-                                             @Nullable String basePath, @Nullable String compressionCodec) {
-      super(name, schema, fieldNames, basePath, compressionCodec);
-    }
-  }
-
-  /**
    * Dynamic partitioner that creates partitions based on a list of fields in each record.
    */
   public static final class FieldValueDynamicPartitioner
@@ -135,7 +128,7 @@ public class AvroDynamicPartitionedDatasetSink extends
       // Need a better way to do this. [CDAP-7058]
       String rawFieldNames = mapReduceTaskContext
         .getPluginProperties(AvroDynamicPartitionedDatasetSink.NAME)
-        .getProperties().get(AvroDynamicPartitionedDatasetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
+        .getProperties().get(PartitionedFileSetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
 
       // Need to use macro parser here. [CDAP-11960]
       BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());

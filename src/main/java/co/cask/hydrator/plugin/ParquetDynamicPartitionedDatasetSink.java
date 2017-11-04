@@ -48,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * A {@link BatchSink} to write Parquet records to a {@link PartitionedFileSet}.
@@ -63,9 +62,9 @@ public class ParquetDynamicPartitionedDatasetSink extends
   private static final Logger LOG = LoggerFactory.getLogger(ParquetDynamicPartitionedDatasetSink.class);
 
   private StructuredToAvroTransformer recordTransformer;
-  private final ParquetDynamicPartitionedDatasetSinkConfig config;
+  private final PartitionedFileSetSinkConfig config;
 
-  public ParquetDynamicPartitionedDatasetSink(ParquetDynamicPartitionedDatasetSinkConfig config) {
+  public ParquetDynamicPartitionedDatasetSink(PartitionedFileSetSinkConfig config) {
     super(config);
     this.config = config;
   }
@@ -74,8 +73,12 @@ public class ParquetDynamicPartitionedDatasetSink extends
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
     Map<String, String> sinkArgs = getAdditionalPFSArguments();
+    DynamicPartitioner.PartitionWriteOption writeOption =
+      config.appendToPartition == null || "No".equals(config.appendToPartition) ?
+        DynamicPartitioner.PartitionWriteOption.CREATE :
+        DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
     PartitionedFileSetArguments.setDynamicPartitioner
-      (sinkArgs, ParquetDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class);
+      (sinkArgs, ParquetDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
   }
 
@@ -111,16 +114,6 @@ public class ParquetDynamicPartitionedDatasetSink extends
   }
 
   /**
-   * Config for ParquetDynamicPartitionedDatasetSink
-   */
-  public static class ParquetDynamicPartitionedDatasetSinkConfig extends PartitionedFileSetSinkConfig {
-    public ParquetDynamicPartitionedDatasetSinkConfig(String name, String schema, String fieldNames,
-                                          @Nullable String basePath, @Nullable String compressionCodec) {
-      super(name, schema, fieldNames, basePath, compressionCodec);
-    }
-  }
-
-  /**
    * Dynamic partitioner that creates partitions based on a list of fields in each record.
    */
   public static final class FieldValueDynamicPartitioner extends DynamicPartitioner<Void, GenericRecord> {
@@ -131,7 +124,7 @@ public class ParquetDynamicPartitionedDatasetSink extends
       // Need a better way to do this. [CDAP-7058]
       String rawFieldNames = mapReduceTaskContext
         .getPluginProperties(ParquetDynamicPartitionedDatasetSink.NAME)
-        .getProperties().get(ParquetDynamicPartitionedDatasetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
+        .getProperties().get(PartitionedFileSetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
 
       // Need to use macro parser here. [CDAP-11960]
       BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());

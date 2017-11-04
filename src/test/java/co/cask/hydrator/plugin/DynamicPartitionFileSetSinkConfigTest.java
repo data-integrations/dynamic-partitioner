@@ -21,7 +21,10 @@ import co.cask.cdap.etl.mock.common.MockPipelineConfigurer;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class DynamicPartitionFileSetSinkTest {
+/**
+ * Test configuration of dynamic partitioned fileset sink plugins.
+ */
+public class DynamicPartitionFileSetSinkConfigTest {
 
   private final String recordName = "sales";
   private final String avroSinkName = recordName + "Avro";
@@ -41,9 +44,9 @@ public class DynamicPartitionFileSetSinkTest {
     String fieldnames = "price";
 
     // configure the pipelines
-    configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null);
-    configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null);
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null);
+    configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null, null);
+    configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null, null);
+    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null, null);
   }
 
   @Test
@@ -59,9 +62,9 @@ public class DynamicPartitionFileSetSinkTest {
     String fieldnames = "price,buyer";
 
     // configure the pipelines
-    configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null);
-    configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null);
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null);
+    configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null, null);
+    configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null, null);
+    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null, null);
   }
 
   @Test
@@ -86,20 +89,20 @@ public class DynamicPartitionFileSetSinkTest {
 
     // configure the pipelines
     try {
-      configureAvroSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null);
+      configureAvroSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null, null);
       Assert.fail("Avro sink did not throw exception");
     } catch (RuntimeException e) {
     }
 
     try {
-      configureParquetSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null);
+      configureParquetSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null, null);
       Assert.fail("Parquet sink did not throw exception");
     } catch (RuntimeException e) {
     }
 
     try {
       configureORCSinkfromConfigs(orcSinkName, inputschema, outputschema, fieldnames,
-                                  null, null, null, null, null, null);
+                                  null, null, null, null, null, null, null);
       Assert.fail("ORC sink did not throw exception");
     } catch (RuntimeException e) {
     }
@@ -127,14 +130,14 @@ public class DynamicPartitionFileSetSinkTest {
 
     // configure the pipelines
     try {
-      configureAvroSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null);
+      configureAvroSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null, null);
       Assert.fail("Avro sink did not throw exception");
     } catch (RuntimeException e) {
     }
 
     try {
       configureORCSinkfromConfigs(orcSinkName, inputschema, outputschema, fieldnames,
-                                  null, null, null, null, null, null);
+                                  null, null, null, null, null, null, null);
       Assert.fail("ORC sink did not throw exception");
     } catch (RuntimeException e) {
     }
@@ -153,12 +156,12 @@ public class DynamicPartitionFileSetSinkTest {
     String fieldnames = "price,buyer";
 
     // configure the pipelines
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB",
+    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
                                 new Long("1024"), new Long("1024"), new Long("1000"), "True");
 
     // one field is missing when codec is set
     try {
-      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB",
+      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
                                   new Long("1024"), null, new Long("1024"), "True");
       Assert.fail("ORC sink did not throw exception");
     } catch (RuntimeException e) {
@@ -166,7 +169,7 @@ public class DynamicPartitionFileSetSinkTest {
 
     // index stride smaller than 1000
     try {
-      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB",
+      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
                                   new Long("1024"), new Long("1024"), new Long("999"), "True");
       Assert.fail("ORC sink did not throw exception");
     } catch (RuntimeException e) {
@@ -174,12 +177,12 @@ public class DynamicPartitionFileSetSinkTest {
   }
 
   private void configureAvroSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
-                                             String fieldnames, String basePath, String compressionCodec) {
+                                            String fieldnames, String basePath, String compressionCodec,
+                                            String partitionWriteOption) {
     // test avro sink
-    AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig avroDynamicPartitionedDatasetSinkConfig =
-      new AvroDynamicPartitionedDatasetSink.AvroDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(),
-                                                                                    fieldnames, basePath,
-                                                                                    compressionCodec);
+    PartitionedFileSetSinkConfig avroDynamicPartitionedDatasetSinkConfig =
+      new PartitionedFileSetSinkConfig(sinkName, outputschema.toString(), fieldnames, basePath, compressionCodec,
+                                       partitionWriteOption);
     AvroDynamicPartitionedDatasetSink avroDynamicPartitionedDatasetSink =
       new AvroDynamicPartitionedDatasetSink(avroDynamicPartitionedDatasetSinkConfig);
 
@@ -188,14 +191,12 @@ public class DynamicPartitionFileSetSinkTest {
   }
 
   private void configureParquetSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
-                                                String fieldnames, String basePath, String compressionCodec) {
+                                               String fieldnames, String basePath, String compressionCodec,
+                                               String partitionWriteOption) {
     // test parquet sink
-    ParquetDynamicPartitionedDatasetSink
-      .ParquetDynamicPartitionedDatasetSinkConfig parquetDynamicPartitionedDatasetSinkConfig =
-      new ParquetDynamicPartitionedDatasetSink.ParquetDynamicPartitionedDatasetSinkConfig(sinkName,
-                                                                                          outputschema.toString(),
-                                                                                          fieldnames,
-                                                                                          basePath, compressionCodec);
+    PartitionedFileSetSinkConfig parquetDynamicPartitionedDatasetSinkConfig =
+      new PartitionedFileSetSinkConfig(sinkName, outputschema.toString(), fieldnames, basePath, compressionCodec,
+                                       partitionWriteOption);
     ParquetDynamicPartitionedDatasetSink parquetDynamicPartitionedDatasetSink =
       new ParquetDynamicPartitionedDatasetSink(parquetDynamicPartitionedDatasetSinkConfig);
 
@@ -205,15 +206,14 @@ public class DynamicPartitionFileSetSinkTest {
 
   private void configureORCSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
                                            String fieldnames, String basePath, String compressionCodec,
-                                           Long compressionChunkSize, Long stripeSize,
+                                           String partitionWriteOption, Long compressionChunkSize, Long stripeSize,
                                            Long indexStride,
                                            String createIndex) {
     // test parquet sink
     ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig orcDynamicPartitionedDatasetSinkConfig =
-      new ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig(sinkName, outputschema.toString(),
-                                                                       fieldnames, basePath, compressionCodec,
-                                                                       compressionChunkSize, stripeSize, indexStride,
-                                                                       createIndex);
+      new ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig(
+        sinkName, outputschema.toString(), fieldnames, basePath, compressionCodec, partitionWriteOption,
+        compressionChunkSize, stripeSize, indexStride, createIndex);
     ORCDynamicPartitionedDatasetSink orcDynamicPartitionedDatasetSink =
       new ORCDynamicPartitionedDatasetSink(orcDynamicPartitionedDatasetSinkConfig);
 

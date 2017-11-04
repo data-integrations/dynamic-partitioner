@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 /**
  * Abstract config for TimePartitionedFileSetSink
  */
-public abstract class PartitionedFileSetSinkConfig extends PluginConfig {
+public class PartitionedFileSetSinkConfig extends PluginConfig {
   public static final String FIELD_NAMES_PROPERTY_KEY = "fieldNames";
 
   @Description("Name of the Partitioned FileSet Dataset to which the records " +
@@ -60,13 +60,19 @@ public abstract class PartitionedFileSetSinkConfig extends PluginConfig {
   @Macro
   protected String fieldNames;
 
+  @Nullable
+  @Description("Allow appending to existing partitions, by default this capability is disabled.")
+  protected String appendToPartition;
+
   public PartitionedFileSetSinkConfig(String name, String schema, String fieldNames,
-                                      @Nullable String basePath, @Nullable String compressionCodec) {
+                                      @Nullable String basePath, @Nullable String compressionCodec,
+                                      @Nullable String appendToPartition) {
     this.name = name;
     this.basePath = basePath;
     this.compressionCodec = compressionCodec;
     this.schema = schema;
     this.fieldNames = fieldNames;
+    this.appendToPartition = appendToPartition;
   }
 
   public String getNonNullBasePath() {
