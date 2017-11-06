@@ -23,12 +23,15 @@ import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
 
 /**
  * Creates GenericRecords from StructuredRecords
@@ -38,11 +41,13 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
   private final Map<Integer, Schema> schemaCache;
   private final co.cask.cdap.api.data.schema.Schema outputCDAPSchema;
   private final Schema outputAvroSchema;
-  private final List toIgnore;
+  private final Set<String> ignoreFields;
+  private static final Logger LOG = LoggerFactory.getLogger(StructuredToAvroTransformer.class);
+
 
   public StructuredToAvroTransformer(String outputSchema, String toIgnore) {
     this.schemaCache = Maps.newHashMap();
-    this.toIgnore = Arrays.asList(toIgnore.split(","));
+    this.ignoreFields = new HashSet<String>(Arrays.asList((toIgnore.split(","))));
     try {
       this.outputCDAPSchema =
         (outputSchema != null) ? co.cask.cdap.api.data.schema.Schema.parseJson(outputSchema) : null;
@@ -61,21 +66,23 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
   public GenericRecord transform(StructuredRecord structuredRecord,
                                  co.cask.cdap.api.data.schema.Schema schema) throws IOException {
     co.cask.cdap.api.data.schema.Schema structuredRecordSchema = structuredRecord.getSchema();
-    List fieldsToIgnore = (toIgnore == null) ? new ArrayList() : Arrays.asList(toIgnore);
     Schema avroSchema = getAvroSchema(schema);
 
     GenericRecordBuilder recordBuilder = new GenericRecordBuilder(avroSchema);
     for (Schema.Field field : avroSchema.getFields()) {
       String fieldName = field.name();
-      if (fieldsToIgnore.contains(fieldName)) {
+      if (ignoreFields.contains(fieldName)) {
         continue;
       }
       co.cask.cdap.api.data.schema.Schema.Field schemaField = structuredRecordSchema.getField(fieldName);
-      if (schemaField == null) {
-        throw new IllegalArgumentException("Input record does not contain the " + fieldName + " field.");
+      if (schemaField != null) {
+        LOG.info("Setting field {}", fieldName);
+        recordBuilder.set(fieldName, convertField(structuredRecord.get(fieldName), schemaField.getSchema()));
       }
-      recordBuilder.set(fieldName, convertField(structuredRecord.get(fieldName), schemaField.getSchema()));
     }
+    LOG.info("Setting field name");
+    recordBuilder.set("_CDAPStageName", "Dummy");
+    LOG.info("Record {}", recordBuilder.toString());
     return recordBuilder.build();
   }
 

@@ -34,19 +34,28 @@ import co.cask.cdap.api.dataset.lib.Partitioning;
 import co.cask.cdap.api.macro.MacroEvaluator;
 import co.cask.cdap.api.mapreduce.MapReduceTaskContext;
 import co.cask.cdap.etl.api.Emitter;
+import co.cask.cdap.etl.api.action.SettableArguments;
 import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
 import co.cask.cdap.etl.common.BasicArguments;
 import co.cask.cdap.etl.common.DefaultMacroEvaluator;
+import co.cask.cdap.internal.lang.Fields;
 import co.cask.hydrator.plugin.common.FileSetUtil;
 import co.cask.hydrator.plugin.common.MacroParser;
 import co.cask.hydrator.plugin.common.StructuredToAvroTransformer;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,12 +66,15 @@ import java.util.Map;
 @Description("Sink for a PartitionedFileSet that writes data in Parquet format and uses a dynamic partition key.")
 public class ParquetDynamicPartitionedDatasetSink extends
   PartitionedFileSetSink<Void, GenericRecord> {
+  private static final Gson GSON = new Gson();
+  private static final Type MAP_TYPE = new TypeToken<Map<String, String>>() { }.getType();
   public static final String NAME = "ParquetDynamicPartitionedDataset";
 
   private static final Logger LOG = LoggerFactory.getLogger(ParquetDynamicPartitionedDatasetSink.class);
 
   private StructuredToAvroTransformer recordTransformer;
   private final PartitionedFileSetSinkConfig config;
+  private String stageName;
 
   public ParquetDynamicPartitionedDatasetSink(PartitionedFileSetSinkConfig config) {
     super(config);
@@ -80,18 +92,37 @@ public class ParquetDynamicPartitionedDatasetSink extends
     PartitionedFileSetArguments.setDynamicPartitioner
       (sinkArgs, ParquetDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
+    SettableArguments args = context.getArguments();
+    Map<String, String> stageFieldnames = new HashMap<>();
+    if (args.has("fieldnames")) {
+      stageFieldnames = GSON.fromJson(args.get("fieldnames"), MAP_TYPE);
+    }
+    stageFieldnames.put(context.getStageName(), config.fieldNames);
+    args.set("fieldnames", GSON.toJson(stageFieldnames));
   }
 
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
-    recordTransformer = new StructuredToAvroTransformer(config.schema, config.fieldNames);
+
+    Schema schema = Schema.parseJson(config.schema);
+
+    List<Schema.Field> fields = new ArrayList<>(schema.getFields());;
+    fields.add(Schema.Field.of("_CDAPStageName",
+        Schema.unionOf(Schema.of(Schema.Type.STRING), Schema.of(Schema.Type.NULL))));
+
+    Schema modified = Schema.recordOf("modified", fields);
+
+    recordTransformer = new StructuredToAvroTransformer(modified.toString(), config.fieldNames);
+    this.stageName = context.getStageName();
   }
 
   @Override
   public void transform(StructuredRecord input,
                         Emitter<KeyValue<Void, GenericRecord>> emitter) throws Exception {
-    emitter.emit(new KeyValue<Void, GenericRecord>(null, recordTransformer.transform(input)));
+    GenericRecord record = recordTransformer.transform(input);
+    record.put("_CDAPStageName", stageName);
+    emitter.emit(new KeyValue<Void, GenericRecord>(null, record));
   }
 
   @Override
@@ -117,27 +148,22 @@ public class ParquetDynamicPartitionedDatasetSink extends
    * Dynamic partitioner that creates partitions based on a list of fields in each record.
    */
   public static final class FieldValueDynamicPartitioner extends DynamicPartitioner<Void, GenericRecord> {
-    private String[] fieldNames;
+    private Map<String, String[]> stageFieldNames;
 
     @Override
     public void initialize(MapReduceTaskContext mapReduceTaskContext) {
-      // Need a better way to do this. [CDAP-7058]
-      String rawFieldNames = mapReduceTaskContext
-        .getPluginProperties(ParquetDynamicPartitionedDatasetSink.NAME)
-        .getProperties().get(PartitionedFileSetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
+      Map<String, String> stageFieldNames =
+          GSON.fromJson(mapReduceTaskContext.getWorkflowToken().get("fieldnames").toString(), MAP_TYPE);
 
-      // Need to use macro parser here. [CDAP-11960]
-      BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());
-      MacroEvaluator macroEvaluator = new DefaultMacroEvaluator(basicArguments,
-                                                                mapReduceTaskContext.getLogicalStartTime(),
-                                                                mapReduceTaskContext,
-                                                                mapReduceTaskContext.getNamespace());
-      MacroParser macroParser = new MacroParser(macroEvaluator);
-      fieldNames = macroParser.parse(rawFieldNames).split(",");
+      this.stageFieldNames = new HashMap<>(stageFieldNames.size());
+      for (Map.Entry<String, String> entry : stageFieldNames.entrySet()) {
+        this.stageFieldNames.put(entry.getKey(), entry.getValue().split(","));
+      }
     }
 
     @Override
     public PartitionKey getPartitionKey(Void key, GenericRecord value) {
+      String[] fieldNames = stageFieldNames.get((String) value.get("_CDAPStageName"));
       PartitionKey.Builder keyBuilder = PartitionKey.builder();
       for (int i = 0; i < fieldNames.length; i++) {
         // discard leading and trailing white spaces in the partition name
@@ -154,5 +180,4 @@ public class ParquetDynamicPartitionedDatasetSink extends
       return keyBuilder.build();
     }
   }
-
 }
