@@ -79,6 +79,14 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
     return this.basePath == null ? this.name : this.basePath;
   }
 
+  public Schema getSchema() {
+    try {
+      return Schema.parseJson(schema);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Unable to parse schema: " + e.getMessage());
+    }
+  }
+
   protected Map.Entry<Schema, String> getOutputSchema() {
     // parse to make sure it's valid
     new org.apache.avro.Schema.Parser().parse(this.schema);

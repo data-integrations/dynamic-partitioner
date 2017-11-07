@@ -31,23 +31,19 @@ import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
 import co.cask.cdap.api.dataset.lib.Partitioning;
-import co.cask.cdap.api.macro.MacroEvaluator;
-import co.cask.cdap.api.mapreduce.MapReduceTaskContext;
 import co.cask.cdap.etl.api.Emitter;
 import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
-import co.cask.cdap.etl.common.BasicArguments;
-import co.cask.cdap.etl.common.DefaultMacroEvaluator;
+import co.cask.hydrator.plugin.common.Constants;
 import co.cask.hydrator.plugin.common.FileSetUtil;
-import co.cask.hydrator.plugin.common.MacroParser;
+import co.cask.hydrator.plugin.common.Schemas;
 import co.cask.hydrator.plugin.common.StructuredToOrcTransformer;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.orc.mapred.OrcStruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -55,14 +51,10 @@ import javax.annotation.Nullable;
  * A {@link BatchSink} to write ORC records to a {@link PartitionedFileSet}.
  */
 @Plugin(type = BatchSink.PLUGIN_TYPE)
-@Name("ORCDynamicPartitionedDataset")
+@Name(ORCDynamicPartitionedDatasetSink.NAME)
 @Description("Sink for a PartitionedFileSet that writes data in ORC format and uses a dynamic partition key.")
-public class ORCDynamicPartitionedDatasetSink extends
-  PartitionedFileSetSink<NullWritable, OrcStruct> {
+public class ORCDynamicPartitionedDatasetSink extends PartitionedFileSetSink<NullWritable, OrcStruct> {
   public static final String NAME = "ORCDynamicPartitionedDataset";
-
-  private static final Logger LOG = LoggerFactory.getLogger(ORCDynamicPartitionedDatasetSink.class);
-
   private static final String ORC_COMPRESS = "orc.compress";
   private static final String SNAPPY_CODEC = "SNAPPY";
   private static final String ZLIB_CODEC = "ZLIB";
@@ -80,30 +72,34 @@ public class ORCDynamicPartitionedDatasetSink extends
   @Override
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
-    Map<String, String> sinkArgs = getAdditionalPFSArguments();
+    Map<String, String> sinkArgs = new HashMap<>();
     DynamicPartitioner.PartitionWriteOption writeOption =
       config.appendToPartition == null || "No".equals(config.appendToPartition) ?
       DynamicPartitioner.PartitionWriteOption.CREATE :
       DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
-    PartitionedFileSetArguments.setDynamicPartitioner
-      (sinkArgs, ORCDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
+    PartitionedFileSetArguments.setDynamicPartitioner(sinkArgs, OrcDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
   }
 
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
-    recordTransformer = new StructuredToOrcTransformer();
+    Schema modified = Schemas.addField(config.getSchema(), Constants.STAGE_FIELD);
+    Map<String, Object> constants = new HashMap<>();
+    constants.put(Constants.STAGE_FIELD_NAME, context.getStageName());
+    recordTransformer = new StructuredToOrcTransformer(modified, constants);
   }
 
   @Override
   public void transform(StructuredRecord input,
                         Emitter<KeyValue<NullWritable, OrcStruct>> emitter) throws Exception {
-    emitter.emit(new KeyValue<>(NullWritable.get(), recordTransformer.transform(input, input.getSchema())));
+    emitter.emit(new KeyValue<>(NullWritable.get(), recordTransformer.transform(input)));
   }
 
   @Override
-  protected void addPartitionedFileSetProperties(PartitionedFileSetProperties.Builder properties) {
+  protected DatasetProperties getDatasetProperties(Partitioning partitioning,
+                                                   Map.Entry<Schema, String> outputSchemaPair) {
+    PartitionedFileSetProperties.Builder properties = PartitionedFileSetProperties.builder();
     FileSetUtil.configureORCFileSet(config.schema, properties);
     if (config.compressionCodec != null && !config.compressionCodec.equalsIgnoreCase("None")) {
       switch (config.compressionCodec.toUpperCase()) {
@@ -129,13 +125,6 @@ public class ORCDynamicPartitionedDatasetSink extends
         properties.setOutputProperty(CREATE_INDEX, config.indexStride.toString());
       }
     }
-  }
-
-  @Override
-  protected DatasetProperties getDatasetProperties(Partitioning partitioning,
-                                                   Map.Entry<Schema, String> outputSchemaPair) {
-    PartitionedFileSetProperties.Builder properties = PartitionedFileSetProperties.builder();
-    addPartitionedFileSetProperties(properties);
     return properties
       .setPartitioning(partitioning)
       .setBasePath(config.getNonNullBasePath())
@@ -179,7 +168,7 @@ public class ORCDynamicPartitionedDatasetSink extends
     }
 
     @Override
-    protected void validate (Schema inputSchema) {
+    protected void validate(Schema inputSchema) {
       super.validate(inputSchema);
 
       // the following cconfigurations must be set if we are using a compression codec
@@ -197,29 +186,10 @@ public class ORCDynamicPartitionedDatasetSink extends
   /**
    * Dynamic partitioner that creates partitions based on a list of fields in each record.
    */
-  public static final class FieldValueDynamicPartitioner
-    extends DynamicPartitioner<NullWritable, OrcStruct> {
-    private String[] fieldNames;
-
-    @Override
-    public void initialize(MapReduceTaskContext mapReduceTaskContext) {
-      // Need a better way to do this. [CDAP-7058]
-      String rawFieldNames = mapReduceTaskContext
-        .getPluginProperties(ORCDynamicPartitionedDatasetSink.NAME)
-        .getProperties().get(ORCDynamicPartitionedDatasetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
-
-      // Need to use macro parser here. [CDAP-11960]
-      BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());
-      MacroEvaluator macroEvaluator = new DefaultMacroEvaluator(basicArguments,
-                                                                mapReduceTaskContext.getLogicalStartTime(),
-                                                                mapReduceTaskContext,
-                                                                mapReduceTaskContext.getNamespace());
-      MacroParser macroParser = new MacroParser(macroEvaluator);
-      fieldNames = macroParser.parse(rawFieldNames).split(",");
-    }
-
+  public static final class OrcDynamicPartitioner extends FieldValueDynamicPartitioner<NullWritable, OrcStruct> {
     @Override
     public PartitionKey getPartitionKey(NullWritable key, OrcStruct value) {
+      String[] fieldNames = stageFieldNames.get(value.getFieldValue(Constants.STAGE_FIELD_NAME).toString());
       PartitionKey.Builder keyBuilder = PartitionKey.builder();
       for (int i = 0; i < fieldNames.length; i++) {
         // discard leading and trailing white spaces in the partition name

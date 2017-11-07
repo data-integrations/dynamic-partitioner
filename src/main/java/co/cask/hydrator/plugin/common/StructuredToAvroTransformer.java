@@ -19,6 +19,7 @@ package co.cask.hydrator.plugin.common;
 
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.hydrator.common.RecordConverter;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -27,10 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -40,21 +38,19 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
 
   private final Map<Integer, Schema> schemaCache;
   private final co.cask.cdap.api.data.schema.Schema outputCDAPSchema;
-  private final Schema outputAvroSchema;
-  private final Set<String> ignoreFields;
+  private final Map<String, Object> constants;
   private static final Logger LOG = LoggerFactory.getLogger(StructuredToAvroTransformer.class);
 
 
-  public StructuredToAvroTransformer(String outputSchema, String toIgnore) {
+  public StructuredToAvroTransformer(String outputSchema, Map<String, Object> constants) {
     this.schemaCache = Maps.newHashMap();
-    this.ignoreFields = new HashSet<String>(Arrays.asList((toIgnore.split(","))));
+    this.constants = ImmutableMap.copyOf(constants);
     try {
       this.outputCDAPSchema =
         (outputSchema != null) ? co.cask.cdap.api.data.schema.Schema.parseJson(outputSchema) : null;
     } catch (IOException e) {
       throw new IllegalArgumentException("Unable to parse schema: Reason: " + e.getMessage(), e);
     }
-    this.outputAvroSchema = (outputSchema != null) ? new Schema.Parser().parse(outputSchema) : null;
   }
 
   public GenericRecord transform(StructuredRecord structuredRecord) throws IOException {
@@ -71,18 +67,15 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
     GenericRecordBuilder recordBuilder = new GenericRecordBuilder(avroSchema);
     for (Schema.Field field : avroSchema.getFields()) {
       String fieldName = field.name();
-      if (ignoreFields.contains(fieldName)) {
+      if (constants.containsKey(fieldName)) {
+        recordBuilder.set(fieldName, constants.get(fieldName));
         continue;
       }
       co.cask.cdap.api.data.schema.Schema.Field schemaField = structuredRecordSchema.getField(fieldName);
       if (schemaField != null) {
-        LOG.info("Setting field {}", fieldName);
         recordBuilder.set(fieldName, convertField(structuredRecord.get(fieldName), schemaField.getSchema()));
       }
     }
-    LOG.info("Setting field name");
-    recordBuilder.set("_CDAPStageName", "Dummy");
-    LOG.info("Record {}", recordBuilder.toString());
     return recordBuilder.build();
   }
 
