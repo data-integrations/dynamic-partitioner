@@ -31,40 +31,33 @@ import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
 import co.cask.cdap.api.dataset.lib.Partitioning;
-import co.cask.cdap.api.macro.MacroEvaluator;
-import co.cask.cdap.api.mapreduce.MapReduceTaskContext;
 import co.cask.cdap.etl.api.Emitter;
+import co.cask.cdap.etl.api.action.SettableArguments;
 import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
-import co.cask.cdap.etl.common.BasicArguments;
-import co.cask.cdap.etl.common.DefaultMacroEvaluator;
+import co.cask.hydrator.plugin.common.Constants;
 import co.cask.hydrator.plugin.common.FileSetUtil;
-import co.cask.hydrator.plugin.common.MacroParser;
+import co.cask.hydrator.plugin.common.Schemas;
 import co.cask.hydrator.plugin.common.StructuredToAvroTransformer;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A {@link BatchSink} to write Avro records to a {@link PartitionedFileSet}.
  */
 @Plugin(type = BatchSink.PLUGIN_TYPE)
-@Name("AvroDynamicPartitionedDataset")
+@Name(AvroDynamicPartitionedDatasetSink.NAME)
 @Description("Sink for a PartitionedFileSet that writes data in Avro format and uses a dynamic partition key.")
-public class AvroDynamicPartitionedDatasetSink extends
-  PartitionedFileSetSink<AvroKey<GenericRecord>, NullWritable> {
+public class AvroDynamicPartitionedDatasetSink extends PartitionedFileSetSink<AvroKey<GenericRecord>, NullWritable> {
   public static final String NAME = "AvroDynamicPartitionedDataset";
-
-  private static final Logger LOG = LoggerFactory.getLogger(AvroDynamicPartitionedDatasetSink.class);
-
-  private StructuredToAvroTransformer recordTransformer;
   private final PartitionedFileSetSinkConfig config;
+  private StructuredToAvroTransformer recordTransformer;
 
   public AvroDynamicPartitionedDatasetSink(PartitionedFileSetSinkConfig config) {
     super(config);
@@ -74,20 +67,23 @@ public class AvroDynamicPartitionedDatasetSink extends
   @Override
   public void prepareRun(BatchSinkContext context) throws DatasetManagementException {
     super.prepareRun(context);
-    Map<String, String> sinkArgs = getAdditionalPFSArguments();
+    Map<String, String> sinkArgs = new HashMap<>();
     DynamicPartitioner.PartitionWriteOption writeOption =
       config.appendToPartition == null || "No".equals(config.appendToPartition) ?
         DynamicPartitioner.PartitionWriteOption.CREATE :
         DynamicPartitioner.PartitionWriteOption.CREATE_OR_APPEND;
-    PartitionedFileSetArguments.setDynamicPartitioner
-      (sinkArgs, AvroDynamicPartitionedDatasetSink.FieldValueDynamicPartitioner.class, writeOption);
+    PartitionedFileSetArguments.setDynamicPartitioner(sinkArgs, AvroDynamicPartitioner.class, writeOption);
     context.addOutput(Output.ofDataset(config.name, sinkArgs));
   }
 
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
-    recordTransformer = new StructuredToAvroTransformer(config.schema, config.fieldNames);
+
+    Schema modified = Schemas.addField(config.getSchema(), Constants.STAGE_FIELD);
+    Map<String, Object> constants = new HashMap<>();
+    constants.put(Constants.STAGE_FIELD_NAME, context.getStageName());
+    recordTransformer = new StructuredToAvroTransformer(modified.toString(), constants);
   }
 
   @Override
@@ -97,51 +93,28 @@ public class AvroDynamicPartitionedDatasetSink extends
   }
 
   @Override
-  protected void addPartitionedFileSetProperties(PartitionedFileSetProperties.Builder properties) {
-    FileSetUtil.configureAvroFileSet(config.schema, properties);
-    properties.addAll(FileSetUtil.getAvroCompressionConfiguration(config.compressionCodec, config.schema, true));
-  }
-
-  @Override
   protected DatasetProperties getDatasetProperties(Partitioning partitioning,
                                                    Map.Entry<Schema, String> outputSchemaPair) {
     PartitionedFileSetProperties.Builder properties = PartitionedFileSetProperties.builder();
-    addPartitionedFileSetProperties(properties);
+    FileSetUtil.configureAvroFileSet(config.schema, properties);
+    properties.addAll(FileSetUtil.getAvroCompressionConfiguration(config.compressionCodec, config.schema, true));
     return properties
       .setPartitioning(partitioning)
       .setBasePath(config.getNonNullBasePath())
       .setTableProperty("avro.schema.literal", outputSchemaPair.getKey().toString())
       .setExploreSchema(outputSchemaPair.getValue().substring(1, outputSchemaPair.getValue().length() - 1))
-      .add(DatasetProperties.SCHEMA, config.schema)
       .build();
   }
 
   /**
    * Dynamic partitioner that creates partitions based on a list of fields in each record.
    */
-  public static final class FieldValueDynamicPartitioner
-    extends DynamicPartitioner<AvroKey<GenericRecord>, NullWritable> {
-    private String[] fieldNames;
-
-    @Override
-    public void initialize(MapReduceTaskContext mapReduceTaskContext) {
-      // Need a better way to do this. [CDAP-7058]
-      String rawFieldNames = mapReduceTaskContext
-        .getPluginProperties(AvroDynamicPartitionedDatasetSink.NAME)
-        .getProperties().get(PartitionedFileSetSinkConfig.FIELD_NAMES_PROPERTY_KEY);
-
-      // Need to use macro parser here. [CDAP-11960]
-      BasicArguments basicArguments = new BasicArguments(mapReduceTaskContext.getRuntimeArguments());
-      MacroEvaluator macroEvaluator = new DefaultMacroEvaluator(basicArguments,
-                                                                mapReduceTaskContext.getLogicalStartTime(),
-                                                                mapReduceTaskContext,
-                                                                mapReduceTaskContext.getNamespace());
-      MacroParser macroParser = new MacroParser(macroEvaluator);
-      fieldNames = macroParser.parse(rawFieldNames).split(",");
-    }
+  public static final class AvroDynamicPartitioner extends
+    FieldValueDynamicPartitioner<AvroKey<GenericRecord>, NullWritable> {
 
     @Override
     public PartitionKey getPartitionKey(AvroKey<GenericRecord> key, NullWritable value) {
+      String[] fieldNames = stageFieldNames.get(key.datum().get(Constants.STAGE_FIELD_NAME));
       PartitionKey.Builder keyBuilder = PartitionKey.builder();
       for (int i = 0; i < fieldNames.length; i++) {
         // discard leading and trailing white spaces in the partition name

@@ -42,6 +42,14 @@ import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.WorkflowManager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.apache.avro.hadoop.io.AvroSerialization;
+import org.apache.avro.mapred.AvroKey;
+import org.apache.avro.mapreduce.AvroKeyOutputFormat;
+import org.apache.avro.reflect.ReflectData;
+import org.apache.hadoop.hive.ql.exec.vector.TimestampColumnVector;
+import org.apache.orc.mapred.OrcStruct;
+import org.apache.orc.mapreduce.OrcMapreduceRecordWriter;
+import org.apache.parquet.avro.AvroParquetOutputFormat;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,16 +79,27 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     setupBatchArtifacts(APP_ARTIFACT_ID, DataPipelineApp.class);
     // add some test plugins
     addPluginArtifact(NamespaceId.DEFAULT.artifact("dynamic-partitioned-dataset-sink-plugins", "1.0.0"),
-                      APP_ARTIFACT_ID, AvroDynamicPartitionedDatasetSink.class, ORCDynamicPartitionedDatasetSink.class,
-                      ParquetDynamicPartitionedDatasetSink.class);
+                      APP_ARTIFACT_ID,
+                      AvroDynamicPartitionedDatasetSink.class, AvroKeyOutputFormat.class,
+                      AvroKey.class, AvroSerialization.class, ReflectData.class,
+                      ORCDynamicPartitionedDatasetSink.class,
+                      OrcStruct.class, OrcMapreduceRecordWriter.class, TimestampColumnVector.class,
+                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class);
   }
 
   @Test
-  public void testPartitionByPurchaseDate() throws Exception {
+  public void testAvroPartitionByPurchaseDate() throws Exception {
     testDynamicPartition(AvroDynamicPartitionedDatasetSink.NAME);
+  }
+
+  @Test
+  public void testParquetPartitionByPurchaseDate() throws Exception {
     testDynamicPartition(ParquetDynamicPartitionedDatasetSink.NAME);
-    // TODO: [CDAP-12793] need to bring this test back once it's fixed
-//     testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
+  }
+
+  @Test
+  public void testOrcPartitionByPurchaseDate() throws Exception {
+    testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
   }
 
   private void testDynamicPartition(String sinkPluginName) throws Exception {
@@ -118,22 +137,14 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     DataSetManager<Table> sourceTable = getDataset(sourceName);
     MockSource.writeInput(sourceTable, ImmutableList.of(record1, record2, record3, record4, record5, record6));
 
-    DataSetManager<PartitionedFileSet> pfsManager = getDataset(sinkName);
-    PartitionedFileSet partionedRecords = pfsManager.get();
-    partionedRecords.addPartition(new PartitionKey.Builder()
-                                    .addField("purchase_date", "2009-01-01").build(), "2009-01-01");
-
-    pfsManager.flush();
-
-
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
     manager.start();
     manager.waitForRun(ProgramRunStatus.COMPLETED, 3, TimeUnit.MINUTES);
 
+    DataSetManager<PartitionedFileSet> pfsManager = getDataset(sinkName);
     pfsManager.flush();
+    PartitionedFileSet partionedRecords = pfsManager.get();
     Set<PartitionDetail> partitions = partionedRecords.getPartitions(null);
-    String path = partitions.iterator().next().getLocation().toString();
-    System.out.println(path);
     Assert.assertEquals(3, partitions.size());
     Assert.assertNotNull(partionedRecords.getPartition(new PartitionKey.Builder()
                                                          .addField("purchase_date", "2009-01-01").build()));

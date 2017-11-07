@@ -79,6 +79,14 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
     return this.basePath == null ? this.name : this.basePath;
   }
 
+  public Schema getSchema() {
+    try {
+      return Schema.parseJson(schema);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Unable to parse schema: " + e.getMessage());
+    }
+  }
+
   protected Map.Entry<Schema, String> getOutputSchema() {
     // parse to make sure it's valid
     new org.apache.avro.Schema.Parser().parse(this.schema);
@@ -113,19 +121,25 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
   protected Partitioning getPartitioning(Schema inputSchema) {
     Partitioning.Builder partitionBuilder = Partitioning.builder();
     String[] partitionFields = this.fieldNames.split(",");
-    for (int i = 0; i < partitionFields.length; i++) {
-      if (inputSchema.getField(partitionFields[i]) == null) {
-        // throw exception if the field used to partition is not present in the input schema
-        throw new IllegalArgumentException(String.format("Field %s is not present in the input schema.",
-                                                         partitionFields[i]));
-      } else if (inputSchema.getField(partitionFields[i]).getSchema().isNullable()) {
-        // throw exception if input field is nullable
-        throw new IllegalArgumentException(String.format("Input field %s has to be non-nullable.",
-                                                         partitionFields[i]));
-      } else {
+//    if (this.containsMacro("fieldNames")) {
+      for (int i = 0; i < partitionFields.length; i++) {
         partitionBuilder.addStringField(partitionFields[i]);
-      }
-    }
+     }
+//    } else {
+//      for (int i = 0; i < partitionFields.length; i++) {
+//      if (inputSchema.getField(partitionFields[i]) == null) {
+//        // throw exception if the field used to partition is not present in the input schema
+//        throw new IllegalArgumentException(String.format("Field %s is not present in the input schema.",
+//                                                         partitionFields[i]));
+//      } else if (inputSchema.getField(partitionFields[i]).getSchema().isNullable()) {
+//        // throw exception if input field is nullable
+//        throw new IllegalArgumentException(String.format("Input field %s has to be non-nullable.",
+//                                                         partitionFields[i]));
+//      } else {
+//        partitionBuilder.addStringField(partitionFields[i]);
+//      }
+//      }
+//    }
     return partitionBuilder.build();
   }
 

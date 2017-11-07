@@ -161,7 +161,8 @@ public class FileSetUtil {
       .setSerDe("org.apache.hadoop.hive.ql.io.orc.OrcSerde")
       .setInputProperty("orc.mapred.output.schema", orcSchema)
       .setOutputProperty("orc.mapred.output.schema", orcSchema)
-      .setEnableExploreOnCreate(true);
+      .setEnableExploreOnCreate(true)
+      .add(DatasetProperties.SCHEMA, configuredSchema);
   }
 
   /*----- private helpers ----*/

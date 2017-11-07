@@ -21,14 +21,15 @@ import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.dataset.DatasetManagementException;
 import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
-import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
 import co.cask.cdap.api.dataset.lib.Partitioning;
 import co.cask.cdap.etl.api.PipelineConfigurer;
+import co.cask.cdap.etl.api.action.SettableArguments;
 import co.cask.cdap.etl.api.batch.BatchSink;
 import co.cask.cdap.etl.api.batch.BatchSinkContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,9 +38,9 @@ import java.util.Map;
  * @param <KEY_OUT> the type of key the sink outputs
  * @param <VAL_OUT> the type of value the sink outputs
  */
-public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
-  extends BatchSink<StructuredRecord, KEY_OUT, VAL_OUT> {
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionedFileSetSink.class);
+public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT> extends BatchSink<StructuredRecord, KEY_OUT, VAL_OUT> {
+  private static final Gson GSON = new Gson();
+  private static final Type MAP_TYPE = new TypeToken<Map<String, String>>() { }.getType();
 
   protected final PartitionedFileSetSinkConfig partitionedSinkConfig;
 
@@ -64,6 +65,14 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
       DatasetProperties properties = getDatasetProperties(partitioning, outputSchemaPair);
       context.createDataset(partitionedSinkConfig.name, PartitionedFileSet.class.getName(), properties);
     }
+
+    SettableArguments args = context.getArguments();
+    Map<String, String> stageFieldnames = new HashMap<>();
+    if (args.has("fieldnames")) {
+      stageFieldnames = GSON.fromJson(args.get("fieldnames"), MAP_TYPE);
+    }
+    stageFieldnames.put(context.getStageName(), partitionedSinkConfig.fieldNames);
+    args.set("fieldnames", GSON.toJson(stageFieldnames));
   }
 
   @Override
@@ -86,21 +95,6 @@ public abstract class PartitionedFileSetSink<KEY_OUT, VAL_OUT>
     }
   }
 
-  /**
-   * @return any additional properties that need to be set for the sink. For example, avro sink requires
-   *         setting some schema output key.
-   */
-  protected Map<String, String> getAdditionalPFSArguments() {
-    return new HashMap<>();
-  }
-
-  protected DatasetProperties getDatasetProperties(Partitioning partitioning,
-                                                   Map.Entry<Schema, String> outputSchemaPair) {
-    return PartitionedFileSetProperties.builder().build();
-  }
-
-  /**
-   * Set file set specific properties, such as input/output format and explore properties.
-   */
-  protected abstract void addPartitionedFileSetProperties(PartitionedFileSetProperties.Builder properties);
+  protected abstract DatasetProperties getDatasetProperties(Partitioning partitioning,
+                                                            Map.Entry<Schema, String> outputSchemaPair);
 }

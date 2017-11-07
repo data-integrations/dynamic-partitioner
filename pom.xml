@@ -38,7 +38,7 @@
     <hive-exec.version>1.2.1</hive-exec.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
-    <app.parents>system:cdap-etl-batch[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT),system:cdap-etl-realtime[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT),system:cdap-data-pipeline[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT),system:cdap-data-streams[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT)</app.parents>
+    <app.parents>system:cdap-data-pipeline[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT),system:cdap-data-streams[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT)</app.parents>
     <!-- this is here because project.basedir evaluates to null in the script build step -->
     <main.basedir>${project.basedir}</main.basedir>
   </properties>
@@ -97,8 +97,15 @@
   <dependencies>
     <dependency>
       <groupId>co.cask.cdap</groupId>
-      <artifactId>cdap-etl-core</artifactId>
+      <artifactId>cdap-api</artifactId>
       <version>${cdap.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-etl-api</artifactId>
+      <version>${cdap.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>co.cask.cdap</groupId>
@@ -116,10 +123,22 @@
       <artifactId>hydrator-test</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>co.cask.cdap</groupId>
+          <artifactId>cdap-explore-jdbc</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-mapred</artifactId>
+      <classifier>hadoop2</classifier>
       <version>${avro.version}</version>
     </dependency>
     <dependency>
@@ -201,6 +220,10 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
@@ -237,7 +260,13 @@
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-avro</artifactId>
-      <version>${parquet-avro.version}</version>
+      <version>1.8.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.orc</groupId>
@@ -274,7 +303,12 @@
             <Embed-Transitive>true</Embed-Transitive>
             <Embed-Directory>lib</Embed-Directory>
             <!--Only @Plugin classes in the export packages will be included as plugin-->
-            <_exportcontents>co.cask.hydrator.*;parquet.avro.*;org.apache.orc.*</_exportcontents>
+            <_exportcontents>
+              co.cask.hydrator.*;
+              org.apache.parquet.avro.*;
+              org.apache.parquet.hadoop.*;
+              org.apache.orc.*
+            </_exportcontents>
           </instructions>
         </configuration>
         <executions>

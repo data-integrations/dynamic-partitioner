@@ -22,6 +22,7 @@ import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.data.schema.UnsupportedTypeException;
 import co.cask.hydrator.common.HiveSchemaConverter;
 import co.cask.hydrator.common.RecordConverter;
+import com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -35,6 +36,7 @@ import org.apache.orc.mapred.OrcStruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -47,17 +49,33 @@ public class StructuredToOrcTransformer extends RecordConverter<StructuredRecord
 
   private static final Logger LOG = LoggerFactory.getLogger(StructuredToOrcTransformer.class);
   private final Map<Schema, TypeDescription> schemaCache = new HashMap<>();
+  private final Map<String, Object> constants;
+  private final Schema schema;
+
+  public StructuredToOrcTransformer(Schema schema, Map<String, Object> constants) {
+    this.schema = schema;
+    this.constants = ImmutableMap.copyOf(constants);
+  }
+
+  public OrcStruct transform(StructuredRecord structuredRecord) throws IOException {
+    return transform(structuredRecord, schema);
+  }
 
   @Override
   public OrcStruct transform(StructuredRecord input, Schema schema) {
-    List<Schema.Field> fields = input.getSchema().getFields();
-    OrcStruct orcRecord = parseOrcSchema(input.getSchema());
+    List<Schema.Field> fields = schema.getFields();
+    OrcStruct orcRecord = parseOrcSchema(schema);
     //populate ORC struct orcRecord object
     for (int i = 0; i < fields.size(); i++) {
       Schema.Field field = fields.get(i);
+      String fieldName = field.getName();
       try {
-        WritableComparable writable = convertToWritable(field, input);
-        orcRecord.setFieldValue(fields.get(i).getName(), writable);
+        if (constants.containsKey(fieldName)) {
+          orcRecord.setFieldValue(fieldName, convertToWritable(field, constants.get(fieldName)));
+          continue;
+        }
+        WritableComparable writable = convertToWritable(field, input.get(fieldName));
+        orcRecord.setFieldValue(fieldName, writable);
       } catch (UnsupportedTypeException e) {
         throw new IllegalArgumentException(String.format("{} is not a supported type", field.getName()), e);
       }
@@ -84,9 +102,7 @@ public class StructuredToOrcTransformer extends RecordConverter<StructuredRecord
     return orcRecord;
   }
 
-  private WritableComparable convertToWritable(Schema.Field field, StructuredRecord input)
-    throws UnsupportedTypeException {
-    Object fieldVal = input.get(field.getName());
+  private WritableComparable convertToWritable(Schema.Field field, Object fieldVal) throws UnsupportedTypeException {
     Schema fieldSchema = field.getSchema();
     Schema.Type fieldType = fieldSchema.getType();
     if (fieldSchema.isNullable()) {
