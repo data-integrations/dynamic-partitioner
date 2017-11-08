@@ -75,7 +75,7 @@ public class FileSetUtil {
 
     properties
       .setInputFormat(AvroParquetInputFormat.class)
-      .setOutputFormat(AvroParquetOutputFormat.class)
+      .setOutputFormat(NewRecordWriterParquetOutputFormat.class)
       .setEnableExploreOnCreate(true)
       .setExploreFormat("parquet")
       .add(DatasetProperties.SCHEMA, configuredSchema);
