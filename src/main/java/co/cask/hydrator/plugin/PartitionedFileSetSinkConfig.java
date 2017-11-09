@@ -118,37 +118,33 @@ public class PartitionedFileSetSinkConfig extends PluginConfig {
     return new AbstractMap.SimpleEntry<>(outputSchema, outputHiveSchema);
   }
 
-  protected Partitioning getPartitioning(Schema inputSchema) {
+  protected Partitioning getPartitioningWithoutMacro(Schema inputSchema) {
     Partitioning.Builder partitionBuilder = Partitioning.builder();
     String[] partitionFields = this.fieldNames.split(",");
-//    if (this.containsMacro("fieldNames")) {
-      for (int i = 0; i < partitionFields.length; i++) {
+    for (int i = 0; i < partitionFields.length; i++) {
+      if (inputSchema.getField(partitionFields[i]) == null) {
+        // throw exception if the field used to partition is not present in the input schema
+        throw new IllegalArgumentException(String.format("Field %s is not present in the input schema.",
+                                                         partitionFields[i]));
+      } else if (inputSchema.getField(partitionFields[i]).getSchema().isNullable()) {
+        // throw exception if input field is nullable
+        throw new IllegalArgumentException(String.format("Input field %s has to be non-nullable.",
+                                                         partitionFields[i]));
+      } else {
         partitionBuilder.addStringField(partitionFields[i]);
-     }
-//    } else {
-//      for (int i = 0; i < partitionFields.length; i++) {
-//      if (inputSchema.getField(partitionFields[i]) == null) {
-//        // throw exception if the field used to partition is not present in the input schema
-//        throw new IllegalArgumentException(String.format("Field %s is not present in the input schema.",
-//                                                         partitionFields[i]));
-//      } else if (inputSchema.getField(partitionFields[i]).getSchema().isNullable()) {
-//        // throw exception if input field is nullable
-//        throw new IllegalArgumentException(String.format("Input field %s has to be non-nullable.",
-//                                                         partitionFields[i]));
-//      } else {
-//        partitionBuilder.addStringField(partitionFields[i]);
-//      }
-//      }
-//    }
+      }
+    }
     return partitionBuilder.build();
   }
 
+  /**
+   * Validate plugin configuration at deployment stage.
+   */
   protected void validate(Schema inputSchema) {
-    // this method checks whether the output schema is valid
-    // also checks against the input schema to see if the partition
-    // fields are valid
+    // No need to validate partition fields if it is macro enabled. No need to validate output schema if
+    // partition fields or output schema is macro enabled.
     if (!this.containsMacro("fieldNames")) {
-      getPartitioning(inputSchema);
+      getPartitioningWithoutMacro(inputSchema);
       if (!this.containsMacro("schema")) {
         getOutputSchema();
       }

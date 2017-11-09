@@ -107,7 +107,7 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     String sinkName = "sink-" + sinkPluginName;
     Map<String, String> properties = ImmutableMap.of("name", sinkName,
                                                      "schema", SCHEMA.toString(),
-                                                     "fieldNames", "purchase_date",
+                                                     "fieldNames", "${field}",
                                                      "appendToPartition", "CREATE_OR_APPEND");
     ETLStage purchaseSink =
       new ETLStage(sinkPluginName, new ETLPlugin(sinkPluginName, BatchSink.PLUGIN_TYPE, properties, null));
@@ -138,7 +138,7 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     MockSource.writeInput(sourceTable, ImmutableList.of(record1, record2, record3, record4, record5, record6));
 
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    manager.start();
+    manager.start(ImmutableMap.of("field", "purchase_date"));
     manager.waitForRun(ProgramRunStatus.COMPLETED, 3, TimeUnit.MINUTES);
 
     DataSetManager<PartitionedFileSet> pfsManager = getDataset(sinkName);
