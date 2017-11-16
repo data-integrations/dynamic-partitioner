@@ -40,6 +40,7 @@ import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.WorkflowManager;
+import co.cask.hydrator.plugin.common.NewRecordWriterParquetOutputFormat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.hadoop.io.AvroSerialization;
@@ -84,7 +85,8 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
                       AvroKey.class, AvroSerialization.class, ReflectData.class,
                       ORCDynamicPartitionedDatasetSink.class,
                       OrcStruct.class, OrcMapreduceRecordWriter.class, TimestampColumnVector.class,
-                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class);
+                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class,
+                      NewRecordWriterParquetOutputFormat.class);
   }
 
   @Test
