@@ -40,6 +40,7 @@ import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.WorkflowManager;
+import co.cask.hydrator.plugin.common.NewRecordWriterParquetOutputFormat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.hadoop.io.AvroSerialization;
@@ -84,7 +85,8 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
                       AvroKey.class, AvroSerialization.class, ReflectData.class,
                       ORCDynamicPartitionedDatasetSink.class,
                       OrcStruct.class, OrcMapreduceRecordWriter.class, TimestampColumnVector.class,
-                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class);
+                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class,
+                      NewRecordWriterParquetOutputFormat.class);
   }
 
   @Test
@@ -107,7 +109,7 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     String sinkName = "sink-" + sinkPluginName;
     Map<String, String> properties = ImmutableMap.of("name", sinkName,
                                                      "schema", SCHEMA.toString(),
-                                                     "fieldNames", "purchase_date",
+                                                     "fieldNames", "${field}",
                                                      "appendToPartition", "CREATE_OR_APPEND");
     ETLStage purchaseSink =
       new ETLStage(sinkPluginName, new ETLPlugin(sinkPluginName, BatchSink.PLUGIN_TYPE, properties, null));
@@ -138,7 +140,7 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
     MockSource.writeInput(sourceTable, ImmutableList.of(record1, record2, record3, record4, record5, record6));
 
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    manager.start();
+    manager.start(ImmutableMap.of("field", "purchase_date"));
     manager.waitForRun(ProgramRunStatus.COMPLETED, 3, TimeUnit.MINUTES);
 
     DataSetManager<PartitionedFileSet> pfsManager = getDataset(sinkName);
