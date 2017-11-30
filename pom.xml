@@ -270,17 +270,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.orc</groupId>
-      <artifactId>orc-mapreduce</artifactId>
-      <version>1.1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>hadoop-hdfs</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.xerial.snappy</groupId>
       <artifactId>snappy-java</artifactId>
       <version>${snappy.version}</version>
@@ -312,8 +301,7 @@
             <_exportcontents>
               co.cask.hydrator.*;
               org.apache.parquet.avro.*;
-              org.apache.parquet.hadoop.*;
-              org.apache.orc.*
+              org.apache.parquet.hadoop.*
             </_exportcontents>
           </instructions>
         </configuration>
