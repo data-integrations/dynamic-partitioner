@@ -46,7 +46,6 @@ public class DynamicPartitionFileSetSinkConfigTest {
     // configure the pipelines
     configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null, null);
     configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null, null);
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null, null);
   }
 
   @Test
@@ -64,7 +63,6 @@ public class DynamicPartitionFileSetSinkConfigTest {
     // configure the pipelines
     configureAvroSinkfromConfigs(avroSinkName, schema, schema, fieldnames, null, null, null);
     configureParquetSinkfromConfigs(parquetSinkName, schema, schema, fieldnames, null, null, null);
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, null, null, null, null, null, null);
   }
 
   @Test
@@ -99,13 +97,6 @@ public class DynamicPartitionFileSetSinkConfigTest {
       Assert.fail("Parquet sink did not throw exception");
     } catch (RuntimeException e) {
     }
-
-    try {
-      configureORCSinkfromConfigs(orcSinkName, inputschema, outputschema, fieldnames,
-                                  null, null, null, null, null, null, null);
-      Assert.fail("ORC sink did not throw exception");
-    } catch (RuntimeException e) {
-    }
   }
 
   @Test
@@ -132,46 +123,6 @@ public class DynamicPartitionFileSetSinkConfigTest {
     try {
       configureAvroSinkfromConfigs(avroSinkName, inputschema, outputschema, fieldnames, null, null, null);
       Assert.fail("Avro sink did not throw exception");
-    } catch (RuntimeException e) {
-    }
-
-    try {
-      configureORCSinkfromConfigs(orcSinkName, inputschema, outputschema, fieldnames,
-                                  null, null, null, null, null, null, null);
-      Assert.fail("ORC sink did not throw exception");
-    } catch (RuntimeException e) {
-    }
-  }
-
-  @Test
-  public void testORCSinkPipelineConfiguration() {
-    Schema schema = Schema.recordOf(
-      recordName,
-      Schema.Field.of("product", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("buyer", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("price", Schema.of(Schema.Type.DOUBLE))
-    );
-
-    // use multiple partition fields
-    String fieldnames = "price,buyer";
-
-    // configure the pipelines
-    configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
-                                new Long("1024"), new Long("1024"), new Long("1000"), "True");
-
-    // one field is missing when codec is set
-    try {
-      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
-                                  new Long("1024"), null, new Long("1024"), "True");
-      Assert.fail("ORC sink did not throw exception");
-    } catch (RuntimeException e) {
-    }
-
-    // index stride smaller than 1000
-    try {
-      configureORCSinkfromConfigs(orcSinkName, schema, schema, fieldnames, null, "ZLIB", null,
-                                  new Long("1024"), new Long("1024"), new Long("999"), "True");
-      Assert.fail("ORC sink did not throw exception");
     } catch (RuntimeException e) {
     }
   }
@@ -202,22 +153,5 @@ public class DynamicPartitionFileSetSinkConfigTest {
 
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(inputschema);
     parquetDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
-  }
-
-  private void configureORCSinkfromConfigs(String sinkName, Schema inputschema, Schema outputschema,
-                                           String fieldnames, String basePath, String compressionCodec,
-                                           String partitionWriteOption, Long compressionChunkSize, Long stripeSize,
-                                           Long indexStride,
-                                           String createIndex) {
-    // test parquet sink
-    ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig orcDynamicPartitionedDatasetSinkConfig =
-      new ORCDynamicPartitionedDatasetSink.ORCDynamicPartitionedDatasetSinkConfig(
-        sinkName, outputschema.toString(), fieldnames, basePath, compressionCodec, partitionWriteOption,
-        compressionChunkSize, stripeSize, indexStride, createIndex);
-    ORCDynamicPartitionedDatasetSink orcDynamicPartitionedDatasetSink =
-      new ORCDynamicPartitionedDatasetSink(orcDynamicPartitionedDatasetSinkConfig);
-
-    MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(inputschema);
-    orcDynamicPartitionedDatasetSink.configurePipeline(mockPipelineConfigurer);
   }
 }

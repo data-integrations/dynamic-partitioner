@@ -47,9 +47,6 @@ import org.apache.avro.hadoop.io.AvroSerialization;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapreduce.AvroKeyOutputFormat;
 import org.apache.avro.reflect.ReflectData;
-import org.apache.hadoop.hive.ql.exec.vector.TimestampColumnVector;
-import org.apache.orc.mapred.OrcStruct;
-import org.apache.orc.mapreduce.OrcMapreduceRecordWriter;
 import org.apache.parquet.avro.AvroParquetOutputFormat;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -83,8 +80,6 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
                       APP_ARTIFACT_ID,
                       AvroDynamicPartitionedDatasetSink.class, AvroKeyOutputFormat.class,
                       AvroKey.class, AvroSerialization.class, ReflectData.class,
-                      ORCDynamicPartitionedDatasetSink.class,
-                      OrcStruct.class, OrcMapreduceRecordWriter.class, TimestampColumnVector.class,
                       ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class,
                       NewRecordWriterParquetOutputFormat.class);
   }
@@ -97,11 +92,6 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
   @Test
   public void testParquetPartitionByPurchaseDate() throws Exception {
     testDynamicPartition(ParquetDynamicPartitionedDatasetSink.NAME);
-  }
-
-  @Test
-  public void testOrcPartitionByPurchaseDate() throws Exception {
-    testDynamicPartition(ORCDynamicPartitionedDatasetSink.NAME);
   }
 
   private void testDynamicPartition(String sinkPluginName) throws Exception {
