@@ -2,9 +2,10 @@
   "metadata": {
     "spec-version": "1.3"
   },
+  "display-name": "Parquet Dynamic Partitioned Dataset",
   "configuration-groups": [
     {
-      "label": "Parquet Dynamic Partitioned Fileset",
+      "label": "Parquet Dynamic Partitioned Dataset",
       "properties": [
         {
           "widget-type": "dataset-selector",
