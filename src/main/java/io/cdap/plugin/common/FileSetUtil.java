@@ -14,14 +14,13 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.common;
+package io.cdap.plugin.common;
 
-import co.cask.cdap.api.data.schema.UnsupportedTypeException;
-import co.cask.cdap.api.dataset.DatasetProperties;
-import co.cask.cdap.api.dataset.lib.FileSetProperties;
-import co.cask.hydrator.common.HiveSchemaConverter;
-import co.cask.hydrator.common.batch.JobUtils;
 import com.google.common.base.Throwables;
+import io.cdap.cdap.api.data.schema.UnsupportedTypeException;
+import io.cdap.cdap.api.dataset.DatasetProperties;
+import io.cdap.cdap.api.dataset.lib.FileSetProperties;
+import io.cdap.plugin.common.batch.JobUtils;
 import org.apache.avro.Schema;
 import org.apache.avro.mapreduce.AvroJob;
 import org.apache.avro.mapreduce.AvroKeyInputFormat;
@@ -177,7 +176,7 @@ public class FileSetUtil {
 
   private static String parseHiveSchema(String schemaString, String configuredSchema) {
     try {
-      return HiveSchemaConverter.toHiveSchema(co.cask.cdap.api.data.schema.Schema.parseJson(schemaString));
+      return HiveSchemaConverter.toHiveSchema(io.cdap.cdap.api.data.schema.Schema.parseJson(schemaString));
     } catch (UnsupportedTypeException e) {
       throw new IllegalArgumentException("Schema " + configuredSchema + " is not supported as a Hive schema.", e);
     } catch (Exception e) {
@@ -186,9 +185,9 @@ public class FileSetUtil {
   }
 
   private static String parseOrcSchema(String configuredSchema) {
-    co.cask.cdap.api.data.schema.Schema schemaObj = null;
+    io.cdap.cdap.api.data.schema.Schema schemaObj = null;
     try {
-      schemaObj = co.cask.cdap.api.data.schema.Schema.parseJson(configuredSchema);
+      schemaObj = io.cdap.cdap.api.data.schema.Schema.parseJson(configuredSchema);
       StringBuilder builder = new StringBuilder();
       HiveSchemaConverter.appendType(builder, schemaObj);
       return builder.toString();

@@ -15,12 +15,11 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.common;
+package io.cdap.plugin.common;
 
-import co.cask.cdap.api.data.format.StructuredRecord;
-import co.cask.hydrator.common.RecordConverter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
@@ -37,7 +36,7 @@ import java.util.Map;
 public class StructuredToAvroTransformer extends RecordConverter<StructuredRecord, GenericRecord> {
 
   private final Map<Integer, Schema> schemaCache;
-  private final co.cask.cdap.api.data.schema.Schema outputCDAPSchema;
+  private final io.cdap.cdap.api.data.schema.Schema outputCDAPSchema;
   private final Map<String, Object> constants;
   private static final Logger LOG = LoggerFactory.getLogger(StructuredToAvroTransformer.class);
 
@@ -47,7 +46,7 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
     this.constants = ImmutableMap.copyOf(constants);
     try {
       this.outputCDAPSchema =
-        (outputSchema != null) ? co.cask.cdap.api.data.schema.Schema.parseJson(outputSchema) : null;
+        (outputSchema != null) ? io.cdap.cdap.api.data.schema.Schema.parseJson(outputSchema) : null;
     } catch (IOException e) {
       throw new IllegalArgumentException("Unable to parse schema: Reason: " + e.getMessage(), e);
     }
@@ -60,8 +59,8 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
 
   @Override
   public GenericRecord transform(StructuredRecord structuredRecord,
-                                 co.cask.cdap.api.data.schema.Schema schema) throws IOException {
-    co.cask.cdap.api.data.schema.Schema structuredRecordSchema = structuredRecord.getSchema();
+                                 io.cdap.cdap.api.data.schema.Schema schema) throws IOException {
+    io.cdap.cdap.api.data.schema.Schema structuredRecordSchema = structuredRecord.getSchema();
     Schema avroSchema = getAvroSchema(schema);
 
     GenericRecordBuilder recordBuilder = new GenericRecordBuilder(avroSchema);
@@ -71,7 +70,7 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
         recordBuilder.set(fieldName, constants.get(fieldName));
         continue;
       }
-      co.cask.cdap.api.data.schema.Schema.Field schemaField = structuredRecordSchema.getField(fieldName);
+      io.cdap.cdap.api.data.schema.Schema.Field schemaField = structuredRecordSchema.getField(fieldName);
       if (schemaField != null) {
         recordBuilder.set(fieldName, convertField(structuredRecord.get(fieldName), schemaField.getSchema()));
       }
@@ -79,7 +78,7 @@ public class StructuredToAvroTransformer extends RecordConverter<StructuredRecor
     return recordBuilder.build();
   }
 
-  private Schema getAvroSchema(co.cask.cdap.api.data.schema.Schema cdapSchema) {
+  private Schema getAvroSchema(io.cdap.cdap.api.data.schema.Schema cdapSchema) {
     int hashCode = cdapSchema.hashCode();
     if (schemaCache.containsKey(hashCode)) {
       return schemaCache.get(hashCode);
