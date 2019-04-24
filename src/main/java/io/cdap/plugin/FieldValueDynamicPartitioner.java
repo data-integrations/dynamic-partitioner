@@ -1,9 +1,9 @@
-package co.cask.hydrator.plugin;
+package io.cdap.plugin;
 
-import co.cask.cdap.api.dataset.lib.DynamicPartitioner;
-import co.cask.cdap.api.mapreduce.MapReduceTaskContext;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.cdap.cdap.api.dataset.lib.DynamicPartitioner;
+import io.cdap.cdap.api.mapreduce.MapReduceTaskContext;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

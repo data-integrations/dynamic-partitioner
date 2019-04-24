@@ -14,15 +14,15 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin;
+package io.cdap.plugin;
 
-import co.cask.cdap.api.annotation.Description;
-import co.cask.cdap.api.annotation.Macro;
-import co.cask.cdap.api.data.schema.Schema;
-import co.cask.cdap.api.data.schema.UnsupportedTypeException;
-import co.cask.cdap.api.dataset.lib.Partitioning;
-import co.cask.cdap.api.plugin.PluginConfig;
-import co.cask.hydrator.common.HiveSchemaConverter;
+import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Macro;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.data.schema.UnsupportedTypeException;
+import io.cdap.cdap.api.dataset.lib.Partitioning;
+import io.cdap.cdap.api.plugin.PluginConfig;
+import io.cdap.plugin.common.HiveSchemaConverter;
 
 import java.io.IOException;
 import java.util.AbstractMap;
