@@ -39,9 +39,11 @@ import co.cask.cdap.proto.id.ArtifactId;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
+import co.cask.cdap.test.TestConfiguration;
 import co.cask.cdap.test.WorkflowManager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.hadoop.io.AvroSerialization;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapreduce.AvroKeyOutputFormat;
@@ -52,6 +54,7 @@ import org.apache.orc.mapreduce.OrcMapreduceRecordWriter;
 import org.apache.parquet.avro.AvroParquetOutputFormat;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.Map;
@@ -62,6 +65,10 @@ import java.util.concurrent.TimeUnit;
  * Unit test for running dynamic partitioned fileset sink plugins.
  */
 public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
+
+  @ClassRule
+  public static final TestConfiguration CONFIG = new TestConfiguration("explore.enabled", false);
+
   private static final ArtifactId APP_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("app", "1.0.0");
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("app", "1.0.0");
   private static final Schema SCHEMA = Schema.recordOf(
@@ -84,7 +91,8 @@ public class DynamicPartitionedFilesetSinkTest extends HydratorTestBase {
                       AvroKey.class, AvroSerialization.class, ReflectData.class,
                       ORCDynamicPartitionedDatasetSink.class,
                       OrcStruct.class, OrcMapreduceRecordWriter.class, TimestampColumnVector.class,
-                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class);
+                      ParquetDynamicPartitionedDatasetSink.class, AvroParquetOutputFormat.class, GenericRecord.class,
+                      AvroParquetOutputFormat.class);
   }
 
   @Test

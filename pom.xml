@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright © 2017 Cask Data, Inc.
+  ~ Copyright © 2019 Cask Data, Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License"); you may not
   ~ use this file except in compliance with the License. You may obtain a copy of
@@ -20,7 +20,7 @@
 
   <groupId>co.cask</groupId>
   <artifactId>dynamic-partitioner</artifactId>
-    <version>2.1.0-SNAPSHOT</version>
+    <version>3.0</version>
   <packaging>jar</packaging>
 
   <name>Dynamic Partitioner</name>
@@ -28,18 +28,19 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <avro.version>1.7.7</avro.version>
+    <avro.version>1.8.1</avro.version>
     <spark.version>1.6.1</spark.version>
-    <cdap.version>4.3.0</cdap.version>
-    <hydrator.version>1.8.0</hydrator.version>
+    <cdap.version>5.1.2</cdap.version>
+    <hydrator.version>2.1.0</hydrator.version>
     <hadoop.version>2.3.0</hadoop.version>
     <common-io.version>0.7.1</common-io.version>
     <parquet-avro.version>1.8.1</parquet-avro.version>
     <hive-exec.version>1.2.1</hive-exec.version>
     <snappy.version>1.1.2</snappy.version>
+    <guice.version>4.0</guice.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
-    <app.parents>system:cdap-data-pipeline[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT),system:cdap-data-streams[4.3.0-SNAPSHOT,4.4.0-SNAPSHOT)</app.parents>
+    <app.parents>system:cdap-etl-batch[5.0.0,6.0.0-SNAPSHOT),system:cdap-data-pipeline[5.0.0,6.0.0-SNAPSHOT),system:cdap-data-streams[5.0.0,6.0.0-SNAPSHOT)</app.parents>
     <!-- this is here because project.basedir evaluates to null in the script build step -->
     <main.basedir>${project.basedir}</main.basedir>
   </properties>
@@ -128,6 +129,10 @@
         <exclusion>
           <groupId>co.cask.cdap</groupId>
           <artifactId>cdap-explore-jdbc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-exec</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -284,6 +289,12 @@
       <groupId>org.xerial.snappy</groupId>
       <artifactId>snappy-java</artifactId>
       <version>${snappy.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${guice.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
