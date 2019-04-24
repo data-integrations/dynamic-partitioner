@@ -14,15 +14,13 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.common;
+package io.cdap.plugin.common;
 
-import co.cask.cdap.api.common.Bytes;
-import co.cask.cdap.api.data.format.StructuredRecord;
-import co.cask.cdap.api.data.schema.Schema;
-import co.cask.cdap.api.data.schema.UnsupportedTypeException;
-import co.cask.hydrator.common.HiveSchemaConverter;
-import co.cask.hydrator.common.RecordConverter;
 import com.google.common.collect.ImmutableMap;
+import io.cdap.cdap.api.common.Bytes;
+import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.data.schema.UnsupportedTypeException;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;

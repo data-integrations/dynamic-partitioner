@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.common;
+package io.cdap.plugin.common;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

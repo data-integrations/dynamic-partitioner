@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright © 2019 Cask Data, Inc.
+  ~ Copyright © 2019 CDAP
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License"); you may not
   ~ use this file except in compliance with the License. You may obtain a copy of
@@ -18,9 +18,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>co.cask</groupId>
+  <groupId>io.cdap.plugin</groupId>
   <artifactId>dynamic-partitioner</artifactId>
-    <version>3.0</version>
+    <version>4.0</version>
   <packaging>jar</packaging>
 
   <name>Dynamic Partitioner</name>
@@ -30,8 +30,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <avro.version>1.8.1</avro.version>
     <spark.version>1.6.1</spark.version>
-    <cdap.version>5.1.2</cdap.version>
-    <hydrator.version>2.1.0</hydrator.version>
+    <cdap.version>6.0.0-SNAPSHOT</cdap.version>
+    <hydrator.version>2.2.0-SNAPSHOT</hydrator.version>
     <hadoop.version>2.3.0</hadoop.version>
     <common-io.version>0.7.1</common-io.version>
     <parquet-avro.version>1.8.1</parquet-avro.version>
@@ -40,7 +40,7 @@
     <guice.version>4.0</guice.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
-    <app.parents>system:cdap-etl-batch[5.0.0,6.0.0-SNAPSHOT),system:cdap-data-pipeline[5.0.0,6.0.0-SNAPSHOT),system:cdap-data-streams[5.0.0,6.0.0-SNAPSHOT)</app.parents>
+    <app.parents>system:cdap-data-pipeline[6.0.0-SNAPSHOT,7.0.0-SNAPSHOT),system:cdap-data-streams[6.0.0-SNAPSHOT,7.0.0-SNAPSHOT)</app.parents>
     <!-- this is here because project.basedir evaluates to null in the script build step -->
     <main.basedir>${project.basedir}</main.basedir>
   </properties>
@@ -56,10 +56,10 @@
 
   <developers>
     <developer>
-      <name>Cask Data, Inc.</name>
+      <name>CDAP</name>
       <email>cdap-users@googlegroups.com</email>
-      <organization>Cask Data, Inc.</organization>
-      <organizationUrl>http://cask.co</organizationUrl>
+      <organization>CDAP</organization>
+      <organizationUrl>http://cdap.io</organizationUrl>
     </developer>
   </developers>
 
@@ -98,36 +98,36 @@
 
   <dependencies>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-api</artifactId>
       <version>${cdap.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-etl-api</artifactId>
       <version>${cdap.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-data-pipeline</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.hydrator</groupId>
+      <groupId>io.cdap.plugin</groupId>
       <artifactId>hydrator-common</artifactId>
       <version>${hydrator.version}</version>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>hydrator-test</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
-          <groupId>co.cask.cdap</groupId>
+          <groupId>io.cdap.cdap</groupId>
           <artifactId>cdap-explore-jdbc</artifactId>
         </exclusion>
         <exclusion>
@@ -321,7 +321,7 @@
             <Embed-Directory>lib</Embed-Directory>
             <!--Only @Plugin classes in the export packages will be included as plugin-->
             <_exportcontents>
-              co.cask.hydrator.*;
+              io.cdap.plugin.*;
               org.apache.parquet.avro.*;
               org.apache.parquet.hadoop.*;
               org.apache.orc.*

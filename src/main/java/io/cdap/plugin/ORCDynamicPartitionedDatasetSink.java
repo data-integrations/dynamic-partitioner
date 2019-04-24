@@ -14,31 +14,31 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin;
+package io.cdap.plugin;
 
-import co.cask.cdap.api.annotation.Description;
-import co.cask.cdap.api.annotation.Name;
-import co.cask.cdap.api.annotation.Plugin;
-import co.cask.cdap.api.data.batch.Output;
-import co.cask.cdap.api.data.format.StructuredRecord;
-import co.cask.cdap.api.data.schema.Schema;
-import co.cask.cdap.api.dataset.DatasetManagementException;
-import co.cask.cdap.api.dataset.DatasetProperties;
-import co.cask.cdap.api.dataset.lib.DynamicPartitioner;
-import co.cask.cdap.api.dataset.lib.KeyValue;
-import co.cask.cdap.api.dataset.lib.PartitionKey;
-import co.cask.cdap.api.dataset.lib.PartitionedFileSet;
-import co.cask.cdap.api.dataset.lib.PartitionedFileSetArguments;
-import co.cask.cdap.api.dataset.lib.PartitionedFileSetProperties;
-import co.cask.cdap.api.dataset.lib.Partitioning;
-import co.cask.cdap.etl.api.Emitter;
-import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
-import co.cask.cdap.etl.api.batch.BatchSink;
-import co.cask.cdap.etl.api.batch.BatchSinkContext;
-import co.cask.hydrator.plugin.common.Constants;
-import co.cask.hydrator.plugin.common.FileSetUtil;
-import co.cask.hydrator.plugin.common.Schemas;
-import co.cask.hydrator.plugin.common.StructuredToOrcTransformer;
+import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.api.annotation.Plugin;
+import io.cdap.cdap.api.data.batch.Output;
+import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.dataset.DatasetManagementException;
+import io.cdap.cdap.api.dataset.DatasetProperties;
+import io.cdap.cdap.api.dataset.lib.DynamicPartitioner;
+import io.cdap.cdap.api.dataset.lib.KeyValue;
+import io.cdap.cdap.api.dataset.lib.PartitionKey;
+import io.cdap.cdap.api.dataset.lib.PartitionedFileSet;
+import io.cdap.cdap.api.dataset.lib.PartitionedFileSetArguments;
+import io.cdap.cdap.api.dataset.lib.PartitionedFileSetProperties;
+import io.cdap.cdap.api.dataset.lib.Partitioning;
+import io.cdap.cdap.etl.api.Emitter;
+import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
+import io.cdap.cdap.etl.api.batch.BatchSink;
+import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.plugin.common.Constants;
+import io.cdap.plugin.common.FileSetUtil;
+import io.cdap.plugin.common.Schemas;
+import io.cdap.plugin.common.StructuredToOrcTransformer;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.orc.mapred.OrcStruct;

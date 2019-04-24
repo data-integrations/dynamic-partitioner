@@ -1,6 +1,6 @@
-package co.cask.hydrator.plugin.common;
+package io.cdap.plugin.common;
 
-import co.cask.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.data.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
